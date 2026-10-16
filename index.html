@@ -206,9 +206,11 @@
   .avatar{
     width:62px;height:62px;border-radius:50%;background:#dfe7f5;flex:0 0 auto;
     display:grid;place-items:center;border:2px solid #fff;margin-top:-30px;
-    box-shadow:0 1px 6px rgba(0,0,0,.12);
+    box-shadow:0 1px 6px rgba(0,0,0,.12);position:relative;overflow:visible;cursor:pointer;
   }
   .avatar svg{width:44px;height:44px;fill:#7d93b8}
+  .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
+  .avatar:active{opacity:.85}
   .hero-name{flex:1 1 auto;padding-top:4px}
   .hero-name h2{margin:0;font-size:20px;font-weight:700;color:#1a1a1c;display:flex;align-items:center;gap:8px}
   /* 可点击编辑的文字：给个浅色虚线和铅笔，提示这里能点 */
@@ -665,11 +667,12 @@
         <div class="hero-inner">
           <div class="hero-card">
             <div class="hero-top">
-              <div class="avatar">
+              <label class="avatar" id="detailAvatar" for="studentAvatarInput">
                 <svg viewBox="0 0 24 24">
                   <path d="M12 12.6a4.3 4.3 0 1 0 0-8.6 4.3 4.3 0 0 0 0 8.6Zm0 1.8c-4.2 0-7.6 2.4-7.6 5.4V21h15.2v-1.2c0-3-3.4-5.4-7.6-5.4Z"/>
                 </svg>
-              </div>
+                <span class="avatar-edit" aria-hidden="true">✎</span>
+              </label>
               <div class="hero-name">
                 <h2><span id="editName" class="editable" onclick="editName()">魏靖文</span> <i>2026级</i></h2>
                 <p>智能制造学院 · 机械设计制造及其自动化 · 机械2602</p>
@@ -771,6 +774,7 @@
       </div>
 
       <input type="file" id="avatarInput" accept="image/*" class="visually-hidden">
+      <input type="file" id="studentAvatarInput" accept="image/*" class="visually-hidden">
 
       <div class="mine-sub" onclick="toast('对外名片：暂未开放')">
         <span>对外名片</span>
@@ -813,7 +817,7 @@
         </div>
       </div>
 
-      <p class="mine-foot">点右下角 ✎ 换头像 · 点名字可以改名</p>
+      <p class="mine-foot">点右下角 ✎ 换头像（和请假详情页的头像是两张照片）· 点名字可以改名</p>
     </div>
   </section>
 
@@ -915,8 +919,10 @@
       el.addEventListener('click', () => toast(el.dataset.toast));
     });
     // 选完头像图片
-    const av = document.getElementById('avatarInput');
-    if (av) {
+    // 两个头像选择框走同一套处理逻辑
+    const bindAvatarInput = (inputId, field) => {
+      const av = document.getElementById(inputId);
+      if (!av) return;
       av.addEventListener('change', async () => {
         const file = av.files && av.files[0];
         if (!file) return;
@@ -926,7 +932,7 @@
         toast('正在处理图片…');
         try {
           const url = await shrinkImage(file, 200);
-          profile.avatar = url;
+          profile[field] = url;
           saveProfile();
           renderAvatar();
           toast('头像已更新');
@@ -936,7 +942,9 @@
           av.value = '';
         }
       });
-    }
+    };
+    bindAvatarInput('avatarInput', 'avatar');                 // 我页面
+    bindAvatarInput('studentAvatarInput', 'studentAvatar');    // 详情页学生头像
 
     // 输入框里按回车 = 点确定
     const input = document.getElementById('dialogInput');
@@ -1060,7 +1068,9 @@
   });
 
   /* ---------------- 日期 + 时间双列拨盘 ---------------- */
-  const DT_DAYS = 14;          // 列出今天起两周
+  const DT_DAYS_BACK = 30;     // 往前 30 天（补录假条用）
+  const DT_DAYS_FORWARD = 400; // 往后 400 天（够用到明年）
+  const DT_DAYS = DT_DAYS_BACK + 1 + DT_DAYS_FORWARD;
   const DT_HOURS = 24;
   const DT_ITEM_H = 44;        // 每行高度，要和 CSS 里的 44px 对齐
   const DT_PAD = 99;           // 上下留白，(242 - 44) / 2
@@ -1117,12 +1127,12 @@
     dateCol.appendChild(spacer());
     timeCol.appendChild(spacer());
 
-    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const base = dateBase();      // 往前 DT_DAYS_BACK 天作为第 0 项
     for (let i = 0; i < DT_DAYS; i++){
-      const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
+      const d = new Date(base.getFullYear(), base.getMonth(), base.getDate() + i);
       const el = document.createElement('div');
       el.className = 'dt-opt' + (sameDay(d, dtDate) ? ' on' : '');
-      el.textContent = dayLabel(d) + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+      el.textContent = dateLabel(d);
       el.onclick = () => {
         dtDate = d;
         markOn(dateCol, el);
@@ -1148,7 +1158,7 @@
 
     // 滚动 → 高亮中间那行；松手后吸附到整行，永远不会停在两行之间
     bindWheel(dateCol, (idx) => {
-      dtDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + idx);
+      dtDate = new Date(base.getFullYear(), base.getMonth(), base.getDate() + idx);
     });
     bindWheel(timeCol, (idx) => {
       dtHour = Math.floor(idx / 2);
@@ -1156,11 +1166,27 @@
     });
   }
 
-  // 该日期在拨盘里的第几项（今天=0）
+  // 拨盘第 0 项是哪一天
+  function dateBase(){
+    const t = new Date(); t.setHours(0, 0, 0, 0);
+    return new Date(t.getFullYear(), t.getMonth(), t.getDate() - DT_DAYS_BACK);
+  }
+  // 该日期在拨盘里的第几项
   function dateIndexOf(d){
+    const base = dateBase();
+    const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    return Math.max(0, Math.min(DT_DAYS - 1, Math.round((x - base) / 86400000)));
+  }
+  // 日期标签：近三天用"今天/明天/后天"，跨年的带上年份，免得以为只能选到本月
+  function dateLabel(d){
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    return Math.max(0, Math.min(DT_DAYS - 1, Math.round((x - today) / 86400000)));
+    const diff = Math.round((x - today) / 86400000);
+    if (diff === 0) return '今天 ' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    if (diff === 1) return '明天 ' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    if (diff === 2) return '后天 ' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    if (d.getFullYear() !== today.getFullYear()) return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    return pad(d.getMonth() + 1) + '-' + pad(d.getDate());
   }
 
   function sameDay(a, b){
@@ -1440,16 +1466,25 @@
   }
 
   /* ---------------- 头像：选一张图，压到 200×200 存本机 ---------------- */
-  function renderAvatar(){
-    const box = document.getElementById('mineAvatar');
+  // 把头像画到指定容器里：没设过就保留原来的占位图标
+  function paintAvatar(boxId, dataUrl){
+    const box = document.getElementById(boxId);
     if (!box) return;
-    if (profile.avatar){
-      box.innerHTML = '';
-      const img = document.createElement('img');
-      img.alt = '头像';
-      img.src = profile.avatar;
-      box.appendChild(img);
+    const old = box.querySelector('img');
+    if (!dataUrl){
+      if (old) old.remove();
+      return;
     }
+    if (old){ old.src = dataUrl; return; }
+    const img = document.createElement('img');
+    img.alt = '头像';
+    img.src = dataUrl;
+    box.insertBefore(img, box.firstChild);
+  }
+
+  function renderAvatar(){
+    paintAvatar('mineAvatar', profile.avatar);              // 「我」页面：本人照片
+    paintAvatar('detailAvatar', profile.studentAvatar);     // 详情页：学生本人照片
   }
 
   // 压成正方形 JPEG，避免把几 MB 的原图塞进 localStorage（有 5MB 上限）
