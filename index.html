@@ -105,19 +105,93 @@
   .notice a{color:#4da3ff;text-decoration:none}
   .list-head{
     display:flex;align-items:center;justify-content:space-between;
-    padding:14px;font-size:14px;color:#d8d8dd;
+    padding:14px;font-size:14px;color:#1a1a1c;
   }
   .list-head .add{
-    border:0;background:none;color:#d8d8dd;font:inherit;font-size:14px;
+    border:0;background:none;color:#4b5563;font:inherit;font-size:14px;
     display:flex;align-items:center;gap:5px;cursor:pointer;
   }
   .list-head .add:active{opacity:.55}
   .list-head .add i{
-    width:17px;height:17px;border-radius:50%;border:1.4px solid #9a9aa2;
+    width:17px;height:17px;border-radius:50%;border:1.4px solid #9aa0a8;
     display:grid;place-items:center;font-style:normal;font-size:12px;line-height:1;
   }
   .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:70px 0}
   .empty p{color:#6b6b72;font-size:14px;margin:0}
+
+  /* ---------- 记录卡片（列表里那条小板）---------- */
+  .records{padding:0 12px 16px;display:flex;flex-direction:column;gap:10px}
+  .rec{
+    background:#fff;border-radius:10px;padding:14px;color:#1a1a1c;cursor:pointer;
+    box-shadow:0 1px 6px rgba(0,0,0,.35);
+  }
+  .rec:active{background:#f2f2f5}
+  .rec b{display:block;font-size:15.5px;font-weight:600;margin-bottom:10px}
+  .rec .f{display:flex;font-size:14px;margin-bottom:6px;color:#8a8a90}
+  .rec .f:last-of-type{margin-bottom:0}
+  .rec .f span:first-child{flex:0 0 84px}
+  .rec .f span:last-child{color:#1a1a1c}
+  .rec .tags{display:flex;gap:8px;margin-top:12px}
+  .tag{font-size:12px;padding:3px 8px;border-radius:4px}
+  .tag.warn{background:#fff4e0;color:#d98b00}
+  .tag.ok{background:#e6f7ed;color:#19a15f}
+  .tag.wait{background:#e8f0fe;color:#1a73e8}
+
+  /* ---------- 详情页（浅色）---------- */
+  .screen.light{background:#f2f3f5}
+  .screen.light .bar{background:#0a66d0;color:#fff}
+  .screen.light .bar .left,.screen.light .bar .right{color:#fff}
+  .screen.light .body{background:#f2f3f5}
+  .hero{background:linear-gradient(180deg,#0a66d0 0%,#0a66d0 62px,#f2f3f5 62px)}
+  .hero-inner{padding:12px 12px 0}
+  .hero-card{background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 8px rgba(0,0,0,.06)}
+  .hero-top{display:flex;align-items:flex-start;gap:12px}
+  .avatar{
+    width:62px;height:62px;border-radius:50%;background:#dfe7f5;flex:0 0 auto;
+    display:grid;place-items:center;border:2px solid #fff;margin-top:-30px;
+    box-shadow:0 1px 6px rgba(0,0,0,.12);
+  }
+  .avatar svg{width:44px;height:44px;fill:#7d93b8}
+  .hero-name{flex:1 1 auto;padding-top:4px}
+  .hero-name h2{margin:0;font-size:20px;font-weight:700;color:#1a1a1c;display:flex;align-items:center;gap:8px}
+  .hero-name h2 i{font-style:normal;font-size:11.5px;font-weight:400;color:#6b7280;background:#f0f1f4;border-radius:4px;padding:2px 6px}
+  .hero-name p{margin:6px 0 0;font-size:12.5px;color:#8a8a90;line-height:1.4}
+  .hero-id{font-size:13px;color:#b6b9c0;letter-spacing:.5px;padding-top:6px}
+  .card{background:#fff;border-radius:12px;margin:10px 12px 0;box-shadow:0 1px 8px rgba(0,0,0,.05);overflow:hidden}
+  .card-h{padding:14px 14px 10px;font-size:15.5px;font-weight:600;color:#1a1a1c}
+  .card .line{display:flex;padding:11px 14px;font-size:14.5px;border-top:1px solid #f0f1f4}
+  .card .line .k{flex:0 0 108px;color:#8a8a90}
+  .card .line .v{flex:1 1 auto;color:#1a1a1c;word-break:break-all}
+  .more{
+    padding:12px 14px;text-align:center;color:#1a73e8;font-size:14px;cursor:pointer;
+    border-top:1px solid #f0f1f4;display:flex;align-items:center;justify-content:center;gap:5px;
+  }
+  .more:active{background:#f7f8fa}
+  .steps{padding:6px 14px 18px}
+  .step{display:flex;gap:12px;position:relative;padding-bottom:6px}
+  .step .rail{flex:0 0 22px;display:flex;flex-direction:column;align-items:center}
+  .step .dot{width:22px;height:22px;border-radius:50%;background:#19a15f;display:grid;place-items:center;flex:0 0 auto}
+  .step .dot svg{width:13px;height:13px;fill:#fff}
+  .step .bar-line{flex:1 1 auto;width:2px;background:#19a15f;margin:2px 0}
+  .step.wait .dot{background:#c9ccd2}
+  .step.wait .bar-line{background:#e2e4e9}
+  .step .txt{flex:1 1 auto;padding-bottom:14px}
+  .step .txt b{display:block;font-size:14.5px;font-weight:600;color:#1a1a1c;margin-bottom:6px}
+  .step .txt em{font-style:normal;display:block;font-size:13px;color:#6b7280;margin-bottom:4px}
+  .step .txt i{font-style:normal;display:inline-block;font-size:12px;color:#9aa0a8;background:#f4f5f7;border-radius:4px;padding:2px 8px}
+  .detail-actions{
+    position:sticky;bottom:0;z-index:5;
+    display:flex;gap:12px;padding:14px 12px calc(14px + env(safe-area-inset-bottom));
+    background:#f2f3f5;border-top:1px solid #e6e8ec;
+  }
+  .line.extra{display:none}
+  .card.open .line.extra{display:flex}
+  .detail-actions button{
+    flex:1 1 0;height:44px;border-radius:6px;font-size:15.5px;cursor:pointer;
+    background:#fff;border:1px solid #d8dbe1;color:#4b5563;
+  }
+  .detail-actions button.primary{background:#1a73e8;border-color:#1a73e8;color:#fff}
+  .detail-actions button:active{opacity:.75}
 
   /* ---------- 图一：表单 ---------- */
   .form-title{padding:14px 14px 10px;font-size:15.5px;font-weight:600;display:flex;align-items:center;gap:8px}
@@ -321,7 +395,7 @@
   </section>
 
   <!-- ============ 图二：请假列表 ============ -->
-  <section class="screen" id="screen-leave-list">
+  <section class="screen light" id="screen-leave-list">
     <div class="bar">
       <div class="left">
         <span class="ico" onclick="back()">‹</span>
@@ -337,11 +411,13 @@
       </div>
 
       <div class="list-head">
-        <span>共 <b style="color:#4da3ff;font-weight:600">0</b> 条请假记录</span>
+        <span>共 <b id="recordCount" style="color:#1a73e8;font-weight:600">0</b> 条请假记录</span>
         <button type="button" class="add" data-nav="leave-new" onclick="go('leave-new')"><i>+</i>新增</button>
       </div>
 
-      <div class="empty">
+      <div class="records" id="recordList"></div>
+
+      <div class="empty" id="emptyState">
         <svg viewBox="0 0 120 78" width="120" height="78" aria-hidden="true">
           <defs>
             <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
@@ -387,6 +463,16 @@
           <span class="v"><span data-slot="days">请指定请假类型</span><span class="chev">›</span></span>
         </div>
 
+        <div class="row tap" data-picker="startAt">
+          <span class="k"><em>*</em>开始时间</span>
+          <span class="v"><span data-slot="startAt">请选择</span><span class="chev">›</span></span>
+        </div>
+
+        <div class="row tap" data-picker="endAt">
+          <span class="k"><em>*</em>结束时间</span>
+          <span class="v"><span data-slot="endAt">请选择</span><span class="chev">›</span></span>
+        </div>
+
         <div class="row">
           <span class="k"><em>*</em>是否出校</span>
           <span class="switch" id="outSwitch" role="switch" aria-checked="false"></span>
@@ -403,22 +489,105 @@
           <span class="v"><span class="upload-ico">&#128206;</span><span class="upload">点击上传</span></span>
         </div>
         <input type="file" id="fileInput" multiple accept="image/*,.pdf,.doc,.docx" hidden>
-      </div>
 
-      <div class="files" id="fileList"></div>
-
-      <div class="form" style="border-top:0">
         <div class="row">
           <span class="k"><em>*</em>手机号</span>
           <span class="v" style="flex:1">
             <input id="phone" type="tel" inputmode="numeric" maxlength="11" placeholder="请输入手机号"
-              style="width:100%;border:0;background:none;color:#f2f2f5;font:inherit;text-align:right;outline:none">
+              style="width:auto;border:0;background:none;color:#f2f2f5;font:inherit;text-align:right;outline:none">
           </span>
         </div>
       </div>
 
+      <div class="files" id="fileList"></div>
+
       <div class="submit-wrap">
         <button class="submit" onclick="submitLeave()">提交</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 图二 / 图三：请假详情（同一页，上下滑动）============ -->
+  <section class="screen light" id="screen-leave-detail">
+    <div class="bar">
+      <div class="left">
+        <span class="ico" onclick="back()">‹</span>
+        <span class="ico" onclick="back()">✕</span>
+      </div>
+      <div class="title">请假详情</div>
+      <div class="right"><span class="ico" onclick="toast('更多')">···</span></div>
+    </div>
+
+    <div class="body">
+      <div class="hero">
+        <div class="hero-inner">
+          <div class="hero-card">
+            <div class="hero-top">
+              <div class="avatar">
+                <svg viewBox="0 0 24 24">
+                  <path d="M12 12.6a4.3 4.3 0 1 0 0-8.6 4.3 4.3 0 0 0 0 8.6Zm0 1.8c-4.2 0-7.6 2.4-7.6 5.4V21h15.2v-1.2c0-3-3.4-5.4-7.6-5.4Z"/>
+                </svg>
+              </div>
+              <div class="hero-name">
+                <h2>魏靖文 <i>2026级</i></h2>
+                <p>智能制造学院 · 机械设计制造及其自动化 · 机械2602</p>
+              </div>
+              <div class="hero-id">202612213</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 请假信息 -->
+      <div class="card">
+        <div class="card-h">请假信息</div>
+        <div class="line"><span class="k">请假开始时间</span><span class="v" id="dStart">—</span></div>
+        <div class="line"><span class="k">请假结束时间</span><span class="v" id="dEnd">—</span></div>
+        <div class="line"><span class="k">请假天数</span><span class="v" id="dDays">—</span></div>
+        <div class="line extra"><span class="k">请假性质 / 类型</span><span class="v" id="dNature">—</span></div>
+        <div class="line"><span class="k">是否出校</span><span class="v" id="dOut">—</span></div>
+        <div class="line"><span class="k">请假事由</span><span class="v" id="dReason">—</span></div>
+        <div class="line"><span class="k">手机号</span><span class="v" id="dPhone">—</span></div>
+        <div class="more" id="dMore" onclick="toggleMore()">展开 <span id="dMoreIcon">⌄</span></div>
+      </div>
+
+      <!-- 销假信息 -->
+      <div class="card">
+        <div class="card-h">销假信息</div>
+        <div class="line"><span class="k">销假状态</span><span class="v" id="dCancel">未销假</span></div>
+      </div>
+
+      <!-- 审核流程 -->
+      <div class="card">
+        <div class="card-h">审核流程</div>
+        <div class="steps">
+          <div class="step">
+            <div class="rail">
+              <span class="dot"><svg viewBox="0 0 24 24"><path d="M9.6 16.6 5 12l1.4-1.4 3.2 3.2 7.4-7.4L18.4 8 9.6 16.6Z"/></svg></span>
+              <span class="bar-line"></span>
+            </div>
+            <div class="txt">
+              <b>发起申请</b>
+              <i id="dSubmitAt">—</i>
+            </div>
+          </div>
+          <div class="step wait" id="dApproveStep" style="padding-bottom:0">
+            <div class="rail">
+              <span class="dot"><svg viewBox="0 0 24 24"><path d="M9.6 16.6 5 12l1.4-1.4 3.2 3.2 7.4-7.4L18.4 8 9.6 16.6Z"/></svg></span>
+            </div>
+            <div class="txt" style="padding-bottom:6px">
+              <b>待辅导员审核</b>
+              <em>审核人：黄雨露</em>
+              <em id="dApproveOpinion">审核意见：同意</em>
+              <i id="dApproveAt">—</i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-actions">
+        <button type="button" onclick="toast('需要到校后定位打卡才能销假')">定位销假</button>
+        <button type="button" class="primary" onclick="toast('续假申请：暂未开放')">续假申请</button>
       </div>
     </div>
   </section>
@@ -506,25 +675,85 @@
     toastTimer = setTimeout(() => t.classList.remove('show'), 1600);
   }
 
-  /* ---------------- 下拉选择 ---------------- */
+  /* ---------------- 时间与格式化 ---------------- */
+  const pad = (n) => String(n).padStart(2, '0');
+
+  function fmt(dt){
+    return dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate())
+      + ' ' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());
+  }
+  function fmtShort(dt){
+    return pad(dt.getMonth() + 1) + '-' + pad(dt.getDate()) + ' ' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());
+  }
+  function roundHalf(dt){
+    const d = new Date(dt.getTime());
+    d.setMinutes(d.getMinutes() >= 30 ? 30 : 0, 0, 0);
+    return d;
+  }
+  function dayLabel(dt){
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const d = new Date(dt.getTime()); d.setHours(0, 0, 0, 0);
+    const diff = Math.round((d - today) / 86400000);
+    if (diff === 0) return '今天 ';
+    if (diff === 1) return '明天 ';
+    if (diff === 2) return '后天 ';
+    return '';
+  }
+  // 天数 = 起止时间之差，保留两位（够应付半天/按节次）
+  function calcDays(){
+    if (!chosen.startAt || !chosen.endAt) return '';
+    const ms = chosen.endAt.getTime() - chosen.startAt.getTime();
+    if (ms <= 0) return '';
+    const d = Math.round(ms / 86400000 * 100) / 100;
+    return String(d);
+  }
+  function refreshDays(){
+    const v = calcDays();
+    const slot = document.querySelector('[data-slot="days"]');
+    if (v) { slot.textContent = v + ' 天'; slot.parentElement.style.color = '#f2f2f5'; }
+    else { slot.textContent = '请指定请假类型'; slot.parentElement.style.color = ''; }
+  }
+
+  /* ---------------- 下拉 / 面板 ---------------- */
+  const DATE_PICKER = { title: '选择日期', kind: 'date' };
+  const TIME_PICKER = { title: '选择时间', kind: 'time' };
+
   const SELECTS = {
     nature: { title: '请假性质', options: ['事假', '病假'] },
     type:   { title: '请假类型', options: ['整天', '半天', '按节次'] },
-    days:   { title: '请假天数', options: ['0.5 天', '1 天', '2 天', '3 天', '3 天以上'] }
+    days:   { title: '请假天数', options: ['0.5 天', '1 天', '2 天', '3 天', '3 天以上'] },
+    startAtDate: DATE_PICKER,
+    startAtTime: TIME_PICKER,
+    endAtDate: DATE_PICKER,
+    endAtTime: TIME_PICKER
   };
   let currentPicker = null;
 
   function openSheet(key){
+    // 起止时间拆成"日期 + 时间"两个面板，这里合并成一条流程
+    let base = key, part = '';
+    if (key === 'startAtDate' || key === 'startAtTime') { base = 'startAt'; part = key.slice(-4).toLowerCase(); }
+    if (key === 'endAtDate' || key === 'endAtTime') { base = 'endAt'; part = key.slice(-4).toLowerCase(); }
+
     const cfg = SELECTS[key];
     if (!cfg) return;
-    currentPicker = key;
+    currentPicker = { key, base, part };
+
+    let opts;
+    if (cfg.kind === 'date') opts = dateOptions();
+    else if (cfg.kind === 'time') opts = timeOptions();
+    else opts = cfg.options;
+
     document.getElementById('sheetTitle').textContent = cfg.title;
     const box = document.getElementById('sheetOptions');
     box.innerHTML = '';
-    cfg.options.forEach(opt => {
+    opts.forEach(opt => {
+      // 静态选项是纯字符串（事假/病假），日期时间是 { label, pick } 对象
+      const isObj = opt !== null && typeof opt === 'object';
+      const label = isObj ? opt.label : String(opt);
       const b = document.createElement('button');
-      b.textContent = opt;
-      b.onclick = () => { choose(key, opt); };
+      b.textContent = label;
+      b.onclick = () => { if (isObj && typeof opt.pick === 'function') opt.pick(); else choose(base, label); };
       box.appendChild(b);
     });
     document.getElementById('sheetMask').classList.add('open');
@@ -537,15 +766,81 @@
     if (e.target.id === 'sheetMask') closeSheet();
   });
 
+  /* ---------------- 日期 / 时间选项（从当前时间往后 7 天，半小时一档）---------------- */
+  function dateOptions(){
+    const out = [];
+    const now = new Date();
+    for (let i = 0; i < 7; i++){
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
+      out.push({
+        label: dayLabel(d) + pad(d.getMonth() + 1) + '-' + pad(d.getDate()),
+        pick: () => setDatePart(d)
+      });
+    }
+    return out;
+  }
+  function timeOptions(){
+    const out = [];
+    const ring = (h) => (h + 24) % 24;   // 比如 23:30 往后半小时 = 次日 00:00
+    for (let i = 0; i < 60; i++){
+      const t = roundHalf(new Date());
+      t.setMinutes(t.getMinutes() + i * 30);
+      const h = ring(t.getHours()), m = t.getMinutes();
+      out.push({ label: pad(h) + ':' + pad(m), pick: () => setTimePart(h, m) });
+    }
+    return out;
+  }
+  function setDatePart(d){
+    const base = currentPicker.base;
+    const cur = chosen[base] || roundHalf(new Date());
+    const nd = new Date(d.getFullYear(), d.getMonth(), d.getDate(), cur.getHours(), cur.getMinutes());
+    chosen[base] = nd;
+    const slot = document.querySelector('[data-slot="' + base + '"]');
+    if (slot) { slot.textContent = fmt(nd); slot.parentElement.style.color = '#f2f2f5'; }
+    // 选了开始时间但还没选结束，默认给个同日 +2 小时，免得天数算不出来
+    if (base === 'startAt' && !chosen.endAt) chosen.endAt = new Date(nd.getTime() + 2 * 3600000);
+    if (base === 'startAt' && chosen.endAt){
+      const s2 = document.querySelector('[data-slot="endAt"]');
+      if (s2 && s2.textContent === '请选择'){ s2.textContent = fmt(chosen.endAt); s2.parentElement.style.color = '#f2f2f5'; }
+    }
+    refreshDays();
+    closeSheet();
+  }
+  function setTimePart(h, m){
+    const base = currentPicker.base;
+    const cur = chosen[base] || roundHalf(new Date());
+    const nd = new Date(cur.getFullYear(), cur.getMonth(), cur.getDate(), h, m);
+    chosen[base] = nd;
+    const slot = document.querySelector('[data-slot="' + base + '"]');
+    if (slot) { slot.textContent = fmt(nd); slot.parentElement.style.color = '#f2f2f5'; }
+    if (base === 'startAt' && !chosen.endAt) chosen.endAt = new Date(nd.getTime() + 2 * 3600000);
+    if (base === 'startAt' && chosen.endAt){
+      const s2 = document.querySelector('[data-slot="endAt"]');
+      if (s2 && s2.textContent === '请选择'){ s2.textContent = fmt(chosen.endAt); s2.parentElement.style.color = '#f2f2f5'; }
+    }
+    refreshDays();
+    closeSheet();
+  }
+
   const chosen = {};
   function choose(key, value){
     chosen[key] = value;
     const slot = document.querySelector(`[data-slot="${key}"]`);
     slot.textContent = value;
-    slot.parentElement.querySelector('.v').style.color = '#f2f2f5';
-    if (key === 'type' && !chosen.days){
-      const d = document.querySelector('[data-slot="days"]');
-      d.textContent = '请选择';
+    slot.parentElement.style.color = '#f2f2f5';
+
+    // 选了请假类型，自动把起止时间按"从现在起到当天结束"填好，省得手点
+    if (key === 'type' && !chosen.startAt){
+      const now = new Date();
+      chosen.startAt = roundHalf(now);
+      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59);
+      if (value === '半天') chosen.endAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0);
+      else chosen.endAt = endOfDay;
+      for (const k of ['startAt', 'endAt']){
+        const sl = document.querySelector('[data-slot="' + k + '"]');
+        if (sl){ sl.textContent = fmt(chosen[k]); sl.parentElement.style.color = '#f2f2f5'; }
+      }
+      refreshDays();
     }
     closeSheet();
   }
@@ -601,16 +896,151 @@
   function submitLeave(){
     if (!chosen.nature) return toast('请选择请假性质');
     if (!chosen.type) return toast('请选择请假类型');
-    if (!chosen.days) return toast('请指定请假天数');
+    if (!chosen.startAt || !chosen.endAt) return toast('请选择开始和结束时间');
+    const days = calcDays();
+    if (!days) return toast('结束时间必须晚于开始时间');
     if (!reason.value.trim()) return toast('请输入请假事由');
-    const phone = document.getElementById('phone').value.trim();
+    const phoneEl = document.getElementById('phone');
+    const phone = phoneEl.value.trim();
     if (!/^1\d{10}$/.test(phone)) return toast('请输入正确的手机号');
 
-    toast(`提交成功：${chosen.nature} ${chosen.days}（${document.getElementById('outSwitch').classList.contains('on') ? '出校' : '不出校'}）`);
-    const done = document.getElementById('screen-leave-new');
-    setTimeout(() => { back(); }, 900);
+    const now = new Date();
+    records.unshift({
+      id: 'r' + now.getTime(),
+      nature: chosen.nature,          // 病假 / 事假
+      type: chosen.type,              // 整天 / 半天 / 按节次
+      days: days,
+      startAt: fmt(chosen.startAt),
+      endAt: fmt(chosen.endAt),
+      out: document.getElementById('outSwitch').classList.contains('on'),
+      reason: reason.value.trim(),
+      phone: phone,
+      files: files.length,
+      submitAt: fmt(now),
+      approveAt: fmt(new Date(now.getTime() + 25000)),
+      approved: true,
+      cancelled: false
+    });
+
+    renderRecords();
+    toast('提交成功，已提交辅导员审核');
+    setTimeout(() => {
+      back();
+      resetForm();
+    }, 700);
   }
 
+  /* ---------------- 假期记录 ---------------- */
+  const records = [];
+
+  function renderRecords(){
+    const box = document.getElementById('recordList');
+    const empty = document.getElementById('emptyState');
+    document.getElementById('recordCount').textContent = records.length;
+    empty.style.display = records.length ? 'none' : 'flex';
+    box.innerHTML = '';
+    records.forEach((r) => {
+      // 全部用 createElement 构建：不解析 HTML 字符串，用户输入也就没法注入标签
+      const el = document.createElement('div');
+      el.className = 'rec';
+      el.onclick = () => openDetail(r.id);
+
+      const title = document.createElement('b');
+      title.textContent = r.nature;
+      el.appendChild(title);
+
+      const field = (label, value) => {
+        const row = document.createElement('div');
+        row.className = 'f';
+        const k = document.createElement('span');
+        k.textContent = label;
+        const v = document.createElement('span');
+        v.textContent = value;
+        row.appendChild(k);
+        row.appendChild(v);
+        el.appendChild(row);
+      };
+      field('请假天数', r.days + ' 天');
+      field('开始时间', r.startAt);
+      field('结束时间', r.endAt);
+
+      const tags = document.createElement('div');
+      tags.className = 'tags';
+      const tag = (text, kind) => {
+        const t = document.createElement('span');
+        t.className = 'tag ' + kind;
+        t.textContent = text;
+        tags.appendChild(t);
+      };
+      tag(r.cancelled ? '已销假' : '未销假', r.cancelled ? 'ok' : 'warn');
+      tag(r.approved ? '已通过' : '审核中', r.approved ? 'ok' : 'wait');
+      el.appendChild(tags);
+
+      box.appendChild(el);
+    });
+  }
+
+  /* ---------------- 详情页 ---------------- */
+  let currentRecord = null;
+
+  function openDetail(id){
+    const r = records.find((x) => x.id === id);
+    if (!r) return;
+    currentRecord = r;
+    const set = (elId, text) => { document.getElementById(elId).textContent = text; };
+    set('dStart', r.startAt);
+    set('dEnd', r.endAt);
+    set('dDays', r.days);
+    set('dNature', r.nature + ' / ' + r.type);
+    set('dOut', r.out ? '是' : '否');
+    set('dReason', r.reason);
+    set('dPhone', r.phone);
+    set('dCancel', r.cancelled ? '已销假' : '未销假');
+    set('dSubmitAt', r.submitAt);
+    set('dApproveAt', r.approveAt);
+
+    const opinion = document.getElementById('dApproveOpinion');
+    const step = document.getElementById('dApproveStep');
+    if (r.approved){
+      step.classList.remove('wait');
+      opinion.style.display = '';
+      opinion.textContent = '审核意见：同意';
+    } else {
+      step.classList.add('wait');
+      opinion.style.display = 'none';
+    }
+
+    document.getElementById('dMoreIcon').textContent = '⌄';
+    document.getElementById('dMore').firstChild.textContent = '展开 ';
+    go('leave-detail');
+  }
+
+  function toggleMore(){
+    const card = document.getElementById('dMore').closest('.card');
+    const open = card.classList.toggle('open');
+    document.getElementById('dMoreIcon').textContent = open ? '⌃' : '⌄';
+    document.getElementById('dMore').firstChild.textContent = open ? '收起 ' : '展开 ';
+  }
+
+  /* ---------------- 表单复位 ---------------- */
+  function resetForm(){
+    Object.keys(chosen).forEach((k) => delete chosen[k]);
+    files = [];
+    renderFiles();
+    document.getElementById('reason').value = '';
+    document.getElementById('reasonCount').textContent = '0';
+    document.getElementById('phone').value = '';
+    const sw2 = document.getElementById('outSwitch');
+    sw2.classList.remove('on');
+    sw2.setAttribute('aria-checked', 'false');
+    document.querySelectorAll('[data-slot]').forEach((sl) => {
+      const k = sl.dataset.slot;
+      sl.textContent = k === 'days' ? '请指定请假类型' : '请选择';
+      sl.parentElement.style.color = '';
+    });
+  }
+
+  renderRecords();
   show('screen-workbench');
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
