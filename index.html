@@ -273,6 +273,36 @@
   }
   .sheet h4{margin:0;padding:14px 18px 10px;font-size:14px;color:var(--muted);font-weight:400}
   #sheetOptions{max-height:52vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+  /* ---------- 日期 + 时间双列拨盘 ---------- */
+  .dt-head{display:flex;border-bottom:1px solid #262629}
+  .dt-head span{flex:1 1 0;text-align:center;padding:12px 0;font-size:14px;color:var(--muted)}
+  .dt-cols{position:relative;display:flex;height:242px}
+  /* 中间高亮条：模拟拨盘选中位置 */
+  .dt-cols::before{
+    content:"";position:absolute;left:10px;right:10px;top:99px;height:44px;
+    background:rgba(255,255,255,.07);border-radius:8px;pointer-events:none;
+  }
+  .dt-col{
+    flex:1 1 0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    padding:99px 0;                 /* 上下留白，让首尾也能滚到高亮区 */
+    scrollbar-width:none;
+  }
+  .dt-col::-webkit-scrollbar{display:none}
+  .dt-col + .dt-col{border-left:1px solid #262629}
+  .dt-opt{
+    height:44px;line-height:44px;text-align:center;font-size:16px;color:#6f6f76;
+    cursor:pointer;font-variant-numeric:tabular-nums;
+  }
+  .dt-opt.on{color:#fff;font-weight:600}
+  .dt-actions{display:flex;border-top:1px solid #262629;margin-top:4px}
+  .dt-actions button{
+    flex:1 1 0;border:0;background:none;color:var(--text);font:inherit;font-size:16px;
+    padding:15px 0;cursor:pointer;
+  }
+  .dt-actions button + button{border-left:1px solid #262629}
+  .dt-actions button.primary{color:#4da3ff;font-weight:500}
+  .dt-actions button:active{background:#26262a}
   .sheet button{
     width:100%;border:0;background:none;color:#e9e9ee;font:inherit;font-size:16px;
     padding:14px 18px;text-align:left;cursor:pointer;border-top:1px solid #262629;
@@ -646,7 +676,18 @@
     <div class="sheet">
       <h4 id="sheetTitle">请选择</h4>
       <div id="sheetOptions"></div>
-      <button class="cancel" onclick="closeSheet()">取消</button>
+      <div id="dtPicker" style="display:none">
+        <div class="dt-head"><span>日期</span><span>时间</span></div>
+        <div class="dt-cols">
+          <div class="dt-col" id="dtDates"></div>
+          <div class="dt-col" id="dtTimes"></div>
+        </div>
+        <div class="dt-actions">
+          <button type="button" onclick="closeSheet()">取消</button>
+          <button type="button" class="primary" onclick="confirmDateTime()">确定</button>
+        </div>
+      </div>
+      <button class="cancel" onclick="closeSheet()" id="sheetCancel">取消</button>
     </div>
   </div>
 
@@ -779,21 +820,10 @@
   }
 
   /* ---------------- 下拉 / 面板 ---------------- */
-  const DATE_PICKER = { title: '选择日期', kind: 'date' };
-  const TIME_PICKER = { title: '选择时间', kind: 'time' };
-
   const SELECTS = {
     nature: { title: '请假性质', options: ['事假', '病假'] },
     type:   { title: '请假类型', options: ['整天', '半天', '按节次'] },
     days:   { title: '请假天数', options: ['0.5 天', '1 天', '2 天', '3 天', '3 天以上'] },
-    startAtDate: DATE_PICKER,
-    startAtTime: TIME_PICKER,
-    endAtDate: DATE_PICKER,
-    endAtTime: TIME_PICKER,
-    rStartDate: DATE_PICKER,
-    rStartTime: TIME_PICKER,
-    rEndDate: DATE_PICKER,
-    rEndTime: TIME_PICKER
   };
   let currentPicker = null;
 
@@ -808,22 +838,18 @@
     let base = key, part = '';
     if (MAP[key]) { base = MAP[key][0]; part = MAP[key][1]; }
 
-    // "日期 + 时间"合并面板：选日期或选时间都作用在同一个字段上
-    const isDateTime = /^(startAt|endAt|rStart|rEnd)DateTime$/.test(key);
-    if (isDateTime) {
-      base = key.replace('DateTime', '');
-      part = 'datetime';
+    // 日期 + 时间：左列日期、右列时间，两列各自上下滚
+    if (/^(startAt|endAt|rStart|rEnd)DateTime$/.test(key)) {
+      openDateTimeSheet(key.replace('DateTime', ''));
+      return;
     }
 
-    const cfg = isDateTime ? { title: '选择日期和时间', kind: 'datetime' } : SELECTS[key];
+    showOptionsMode();
+    const cfg = SELECTS[key];
     if (!cfg) return;
     currentPicker = { key, base, part };
 
-    let opts;
-    if (cfg.kind === 'date') opts = dateOptions();
-    else if (cfg.kind === 'time') opts = timeOptions();
-    else if (cfg.kind === 'datetime') opts = dateOptions().concat(timeOptions());
-    else opts = cfg.options;
+    const opts = cfg.options;
 
     document.getElementById('sheetTitle').textContent = cfg.title;
     const box = document.getElementById('sheetOptions');
@@ -847,60 +873,146 @@
     if (e.target.id === 'sheetMask') closeSheet();
   });
 
-  /* ---------------- 日期 / 时间选项（从当前时间往后 7 天，半小时一档）---------------- */
-  function dateOptions(){
-    const out = [];
-    const now = new Date();
-    for (let i = 0; i < 7; i++){
-      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
-      out.push({
-        label: dayLabel(d) + pad(d.getMonth() + 1) + '-' + pad(d.getDate()),
-        pick: () => setDatePart(d)
-      });
-    }
-    return out;
+  /* ---------------- 日期 + 时间双列拨盘 ---------------- */
+  const DT_DAYS = 14;          // 列出今天起两周
+  const DT_HOURS = 24;
+  const DT_ITEM_H = 44;        // 每行高度，要和 CSS 里的 44px 对齐
+  const DT_PAD = 99;           // 上下留白，(242 - 44) / 2
+
+  let dtBase = null;           // 'startAt' / 'endAt' / 'rStart' / 'rEnd'
+  let dtDate = null;           // 当前选中的日期（Date，只用到年月日）
+  let dtHour = 0, dtMin = 0;   // 当前选中的时间
+
+  function showOptionsMode(){
+    document.getElementById('dtPicker').style.display = 'none';
+    document.getElementById('sheetOptions').style.display = '';
+    document.getElementById('sheetCancel').style.display = '';
   }
-  function timeOptions(){
-    const out = [];
-    for (let h = 0; h < 24; h++){
+  function showPickerMode(){
+    document.getElementById('sheetOptions').style.display = 'none';
+    document.getElementById('sheetCancel').style.display = 'none';
+    document.getElementById('dtPicker').style.display = '';
+  }
+
+  function openDateTimeSheet(base){
+    const cur = (base === 'rStart' || base === 'rEnd')
+      ? (renew && renew[base === 'rStart' ? 'start' : 'end']) || new Date()
+      : chosen[base] || roundHalf(new Date());
+
+    dtBase = base;
+    dtDate = new Date(cur.getFullYear(), cur.getMonth(), cur.getDate());
+    dtHour = cur.getHours();
+    dtMin = cur.getMinutes() >= 30 ? 30 : 0;
+
+    document.getElementById('sheetTitle').textContent = '选择日期和时间';
+    renderDateTimeCols();
+    showPickerMode();
+    document.getElementById('sheetMask').classList.add('open');
+
+    // 滚到当前值的位置
+    const dateCol = document.getElementById('dtDates');
+    const timeCol = document.getElementById('dtTimes');
+    dateCol.scrollTop = 0;
+    timeCol.scrollTop = (dtHour * 2 + (dtMin === 30 ? 1 : 0)) * DT_ITEM_H;
+  }
+
+  function renderDateTimeCols(){
+    const dateCol = document.getElementById('dtDates');
+    const timeCol = document.getElementById('dtTimes');
+    dateCol.innerHTML = '';
+    timeCol.innerHTML = '';
+
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    for (let i = 0; i < DT_DAYS; i++){
+      const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
+      const el = document.createElement('div');
+      el.className = 'dt-opt' + (sameDay(d, dtDate) ? ' on' : '');
+      el.textContent = dayLabel(d) + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+      el.onclick = () => {
+        dtDate = d;
+        markOn(dateCol, el);
+      };
+      dateCol.appendChild(el);
+    }
+
+    for (let h = 0; h < DT_HOURS; h++){
       for (const m of [0, 30]){
-        out.push({ label: pad(h) + ':' + pad(m), pick: () => setTimePart(h, m) });
+        const el = document.createElement('div');
+        el.className = 'dt-opt' + (h === dtHour && m === dtMin ? ' on' : '');
+        el.textContent = pad(h) + ':' + pad(m);
+        el.onclick = () => {
+          dtHour = h; dtMin = m;
+          markOn(timeCol, el);
+        };
+        timeCol.appendChild(el);
       }
     }
-    return out;
+
+    // 滚动时高亮中间那一行，做出拨盘的感觉
+    bindWheelHighlight(dateCol, (idx) => {
+      dtDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + idx);
+    });
+    bindWheelHighlight(timeCol, (idx) => {
+      dtHour = Math.floor(idx / 2);
+      dtMin = idx % 2 === 0 ? 0 : 30;
+    });
   }
-  function setDatePart(d){
-    const base = currentPicker.base;
-    const cur = chosen[base] || roundHalf(new Date());
-    const nd = new Date(d.getFullYear(), d.getMonth(), d.getDate(), cur.getHours(), cur.getMinutes());
-    if (base === 'rStart' || base === 'rEnd'){ setRenewPart(base, nd); return; }
-    chosen[base] = nd;
+
+  function sameDay(a, b){
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+  function markOn(col, el){
+    Array.prototype.forEach.call(col.children, (c) => c.classList.remove('on'));
+    el.classList.add('on');
+  }
+  function bindWheelHighlight(col, onIndex){
+    col.onscroll = () => {
+      const idx = Math.max(0, Math.min(col.children.length - 1, Math.round(col.scrollTop / DT_ITEM_H)));
+      onIndex(idx);
+      const el = col.children[idx];
+      if (el && !el.classList.contains('on')) markOn(col, el);
+    };
+  }
+
+  function confirmDateTime(){
+    const dt = new Date(dtDate.getFullYear(), dtDate.getMonth(), dtDate.getDate(), dtHour, dtMin);
+    const base = dtBase;
+    closeSheet();                       // 先关面板；不合法时下面的函数会重新打开
+    if (base === 'rStart' || base === 'rEnd') setRenewPart(base, dt);
+    else setDateTimePart(base, dt);
+  }
+
+  /* ---------------- 把选好的日期时间写回表单 ---------------- */
+  function setDateTimePart(base, dt){
+    if (base === 'rStart' || base === 'rEnd'){ setRenewPart(base, dt); return; }
+
+    chosen[base] = dt;
     const slot = document.querySelector('[data-slot="' + base + '"]');
-    if (slot) { slot.textContent = fmt(nd); slot.parentElement.style.color = '#f2f2f5'; }
-    // 选了开始时间但还没选结束，默认给个同日 +2 小时，免得天数算不出来
-    if (base === 'startAt' && !chosen.endAt) chosen.endAt = new Date(nd.getTime() + 2 * 3600000);
-    if (base === 'startAt' && chosen.endAt){
-      const s2 = document.querySelector('[data-slot="endAt"]');
-      if (s2 && s2.textContent === '请选择'){ s2.textContent = fmt(chosen.endAt); s2.parentElement.style.color = '#f2f2f5'; }
+    if (slot){ slot.textContent = fmt(dt); slot.parentElement.style.color = '#f2f2f5'; }
+
+    const setSlot = (key, value) => {
+      const el = document.querySelector('[data-slot="' + key + '"]');
+      if (el){ el.textContent = fmt(value); el.parentElement.style.color = '#f2f2f5'; }
+    };
+
+    if (base === 'startAt'){
+      // 改到结束时间之后（或还没选结束）就把结束时间一起推过去，否则天数算不出来
+      if (!chosen.endAt || chosen.endAt.getTime() <= dt.getTime()){
+        chosen.endAt = new Date(dt.getTime() + 2 * 3600000);
+        setSlot('endAt', chosen.endAt);
+        toast('开始时间晚于结束时间，已把结束时间顺延到 ' + fmt(chosen.endAt));
+      }
+    } else if (base === 'endAt'){
+      if (!chosen.startAt){
+        chosen.startAt = new Date(dt.getTime() - 2 * 3600000);
+        setSlot('startAt', chosen.startAt);
+      } else if (dt.getTime() <= chosen.startAt.getTime()){
+        toast('结束时间不能早于开始时间');
+        refreshDays();
+        return;
+      }
     }
     refreshDays();
-    closeSheet();
-  }
-  function setTimePart(h, m){
-    const base = currentPicker.base;
-    const cur = chosen[base] || roundHalf(new Date());
-    const nd = new Date(cur.getFullYear(), cur.getMonth(), cur.getDate(), h, m);
-    if (base === 'rStart' || base === 'rEnd'){ setRenewPart(base, nd); return; }
-    chosen[base] = nd;
-    const slot = document.querySelector('[data-slot="' + base + '"]');
-    if (slot) { slot.textContent = fmt(nd); slot.parentElement.style.color = '#f2f2f5'; }
-    if (base === 'startAt' && !chosen.endAt) chosen.endAt = new Date(nd.getTime() + 2 * 3600000);
-    if (base === 'startAt' && chosen.endAt){
-      const s2 = document.querySelector('[data-slot="endAt"]');
-      if (s2 && s2.textContent === '请选择'){ s2.textContent = fmt(chosen.endAt); s2.parentElement.style.color = '#f2f2f5'; }
-    }
-    refreshDays();
-    closeSheet();
   }
 
   const chosen = {};
@@ -1263,19 +1375,24 @@
   function askRenew(){
     const r = currentRecord;
     if (!r) return;
-    // 默认在原结束时间基础上延长 1 天，用户可再改
+    // 默认在原结束时间基础上延长 1 天，用户可在拨盘里再改
     const prevEnd = new Date(r.endAt.replace(/-/g, '/'));
     const base = isNaN(prevEnd.getTime()) ? new Date() : prevEnd;
-    const end = new Date(base.getTime() + 86400000);
-    renew = { start: base, end: end, originEnd: r.endAt };
-    openSheet('rEndDate');
+    renew = {
+      rStart: new Date(base.getTime()),
+      rEnd: new Date(base.getTime() + 86400000),
+      start: new Date(base.getTime()),                 // 兼容旧字段
+      end: new Date(base.getTime() + 86400000),
+      originEnd: r.endAt
+    };
+    openDateTimeSheet('rEnd');
     toast('选择续假后的结束时间');
   }
 
   function setRenewPart(base, nd){
-    if (!renew) renew = { start: new Date(), end: new Date(), originEnd: '' };
-    if (base === 'rStart') renew.start = nd;
-    else renew.end = nd;
+    if (!renew) renew = { rStart: new Date(), rEnd: new Date(), start: new Date(), end: new Date(), originEnd: '' };
+    if (base === 'rStart'){ renew.rStart = nd; renew.start = nd; }
+    else { renew.rEnd = nd; renew.end = nd; }
 
     const endMs = renew.end.getTime();
     const curEndMs = new Date(currentRecord.endAt.replace(/-/g, '/')).getTime();
