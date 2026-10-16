@@ -271,6 +271,34 @@
     opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;max-width:80%;text-align:center;
   }
   .toast.show{opacity:1;transform:translate(-50%,0)}
+  /* ---------- 确认弹窗 ---------- */
+  .dialog-mask{
+    position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:60;
+    align-items:center;justify-content:center;padding:32px;
+  }
+  .dialog-mask.open{display:flex}
+  .dialog{
+    background:#fff;border-radius:14px;width:100%;max-width:300px;overflow:hidden;
+    color:#1a1a1c;text-align:center;
+  }
+  .dialog h4{margin:0;padding:20px 20px 8px;font-size:16.5px;font-weight:600}
+  .dialog p{margin:0;padding:0 20px 18px;font-size:13.5px;color:#6b7280;line-height:1.5}
+  .dialog .btns{display:flex;border-top:1px solid #eceef2}
+  .dialog .btns button{
+    flex:1 1 0;border:0;background:none;font:inherit;font-size:16px;padding:14px 0;cursor:pointer;color:#4b5563;
+  }
+  .dialog .btns button + button{border-left:1px solid #eceef2}
+  .dialog .btns button.primary{color:#1a73e8;font-weight:500}
+  .dialog .btns button:active{background:#f4f5f7}
+
+  /* ---------- 续假记录 ---------- */
+  .renew-row{
+    padding:11px 14px;border-top:1px solid #f0f1f4;font-size:14px;
+  }
+  .renew-row b{display:block;font-weight:600;color:#1a1a1c;margin-bottom:5px;font-size:13.5px}
+  .renew-row span{color:#6b7280;font-size:13px}
+  .renew-row em{font-style:normal;display:inline-block;font-size:11.5px;color:#19a15f;background:#e6f7ed;border-radius:4px;padding:1px 6px;margin-left:6px}
+
   .err-bar{
     display:none;position:sticky;top:0;z-index:60;background:#5a1b18;color:#ffd7d3;
     font-size:12.5px;line-height:1.4;padding:8px 12px;word-break:break-all;
@@ -557,6 +585,12 @@
         <div class="line"><span class="k">销假状态</span><span class="v" id="dCancel">未销假</span></div>
       </div>
 
+      <!-- 续假记录（点过续假申请才出现）-->
+      <div class="card" id="renewCard" style="display:none">
+        <div class="card-h">续假记录</div>
+        <div id="renewList"></div>
+      </div>
+
       <!-- 审核流程 -->
       <div class="card">
         <div class="card-h">审核流程</div>
@@ -586,8 +620,8 @@
       </div>
 
       <div class="detail-actions">
-        <button type="button" onclick="toast('需要到校后定位打卡才能销假')">定位销假</button>
-        <button type="button" class="primary" onclick="toast('续假申请：暂未开放')">续假申请</button>
+        <button type="button" id="btnCancel" onclick="askCancel()">定位销假</button>
+        <button type="button" class="primary" onclick="askRenew()">续假申请</button>
       </div>
     </div>
   </section>
@@ -598,6 +632,17 @@
       <h4 id="sheetTitle">请选择</h4>
       <div id="sheetOptions"></div>
       <button class="cancel" onclick="closeSheet()">取消</button>
+    </div>
+  </div>
+
+  <div class="dialog-mask" id="dialogMask">
+    <div class="dialog">
+      <h4 id="dialogTitle">提示</h4>
+      <p id="dialogText"></p>
+      <div class="btns">
+        <button type="button" onclick="closeDialog()">取消</button>
+        <button type="button" class="primary" id="dialogOk" onclick="runDialogAction()">确定</button>
+      </div>
     </div>
   </div>
 
@@ -725,15 +770,24 @@
     startAtDate: DATE_PICKER,
     startAtTime: TIME_PICKER,
     endAtDate: DATE_PICKER,
-    endAtTime: TIME_PICKER
+    endAtTime: TIME_PICKER,
+    rStartDate: DATE_PICKER,
+    rStartTime: TIME_PICKER,
+    rEndDate: DATE_PICKER,
+    rEndTime: TIME_PICKER
   };
   let currentPicker = null;
 
   function openSheet(key){
-    // 起止时间拆成"日期 + 时间"两个面板，这里合并成一条流程
+    // 起止时间 / 续假起止时间，都拆成"日期 + 时间"两个面板，这里合并成一条流程
+    const MAP = {
+      startAtDate: ['startAt', 'date'], startAtTime: ['startAt', 'time'],
+      endAtDate:   ['endAt',   'date'], endAtTime:   ['endAt',   'time'],
+      rStartDate:  ['rStart',  'date'], rStartTime:  ['rStart',  'time'],
+      rEndDate:    ['rEnd',    'date'], rEndTime:    ['rEnd',    'time']
+    };
     let base = key, part = '';
-    if (key === 'startAtDate' || key === 'startAtTime') { base = 'startAt'; part = key.slice(-4).toLowerCase(); }
-    if (key === 'endAtDate' || key === 'endAtTime') { base = 'endAt'; part = key.slice(-4).toLowerCase(); }
+    if (MAP[key]) { base = MAP[key][0]; part = MAP[key][1]; }
 
     const cfg = SELECTS[key];
     if (!cfg) return;
@@ -794,6 +848,7 @@
     const base = currentPicker.base;
     const cur = chosen[base] || roundHalf(new Date());
     const nd = new Date(d.getFullYear(), d.getMonth(), d.getDate(), cur.getHours(), cur.getMinutes());
+    if (base === 'rStart' || base === 'rEnd'){ setRenewPart(base, nd); return; }
     chosen[base] = nd;
     const slot = document.querySelector('[data-slot="' + base + '"]');
     if (slot) { slot.textContent = fmt(nd); slot.parentElement.style.color = '#f2f2f5'; }
@@ -810,6 +865,7 @@
     const base = currentPicker.base;
     const cur = chosen[base] || roundHalf(new Date());
     const nd = new Date(cur.getFullYear(), cur.getMonth(), cur.getDate(), h, m);
+    if (base === 'rStart' || base === 'rEnd'){ setRenewPart(base, nd); return; }
     chosen[base] = nd;
     const slot = document.querySelector('[data-slot="' + base + '"]');
     if (slot) { slot.textContent = fmt(nd); slot.parentElement.style.color = '#f2f2f5'; }
@@ -987,6 +1043,14 @@
     const r = records.find((x) => x.id === id);
     if (!r) return;
     currentRecord = r;
+    renderDetail();
+    go('leave-detail');
+  }
+
+  // 详情页内容渲染：销假 / 续假之后要能就地刷新
+  function renderDetail(){
+    const r = currentRecord;
+    if (!r) return;
     const set = (elId, text) => { document.getElementById(elId).textContent = text; };
     set('dStart', r.startAt);
     set('dEnd', r.endAt);
@@ -1010,9 +1074,110 @@
       opinion.style.display = 'none';
     }
 
+    // 续假记录：有过续假才出现
+    const card = document.getElementById('renewCard');
+    const list = document.getElementById('renewList');
+    const logs = r.renewals || [];
+    list.innerHTML = '';
+    if (logs.length){
+      card.style.display = '';
+      logs.forEach((g) => {
+        const row = document.createElement('div');
+        row.className = 'renew-row';
+        const t = document.createElement('b');
+        t.textContent = '延长至 ' + g.endAt + '（共 ' + g.days + ' 天）';
+        const when = document.createElement('em');
+        when.textContent = '已通过';
+        t.appendChild(when);
+        const by = document.createElement('span');
+        by.textContent = '申请时间：' + g.at;
+        row.appendChild(t);
+        row.appendChild(by);
+        list.appendChild(row);
+      });
+    } else {
+      card.style.display = 'none';
+    }
+
+    const btn = document.getElementById('btnCancel');
+    btn.disabled = !!r.cancelled;
+    btn.style.opacity = r.cancelled ? '.5' : '';
+    btn.textContent = r.cancelled ? '已销假' : '定位销假';
+
     document.getElementById('dMoreIcon').textContent = '⌄';
     document.getElementById('dMore').firstChild.textContent = '展开 ';
-    go('leave-detail');
+  }
+
+  /* ---------------- 通用确认弹窗 ---------------- */
+  let dialogAction = null;
+
+  function showDialog(title, text, okLabel, action){
+    document.getElementById('dialogTitle').textContent = title;
+    document.getElementById('dialogText').textContent = text;
+    document.getElementById('dialogOk').textContent = okLabel;
+    dialogAction = action;
+    document.getElementById('dialogMask').classList.add('open');
+  }
+  function closeDialog(){
+    document.getElementById('dialogMask').classList.remove('open');
+    dialogAction = null;
+  }
+  // 点"确定"：先关弹窗，再执行动作（动作里可能又会开新弹窗，比如续假）
+  function runDialogAction(){
+    const action = dialogAction;
+    document.getElementById('dialogMask').classList.remove('open');
+    dialogAction = null;
+    if (typeof action === 'function') action();
+  }
+
+  /* ---------------- 定位销假 ---------------- */
+  function askCancel(){
+    const r = currentRecord;
+    if (!r) return;
+    if (r.cancelled) return toast('这条记录已经销假了');
+    showDialog('定位销假', '需要确认你已回到校内，销假后本条请假记录将标记为「已销假」。', '确认销假', () => {
+      r.cancelled = true;
+      renderDetail();
+      renderRecords();
+      toast('销假成功');
+    });
+  }
+
+  /* ---------------- 续假申请 ---------------- */
+  let renew = null;
+
+  function askRenew(){
+    const r = currentRecord;
+    if (!r) return;
+    // 默认在原结束时间基础上延长 1 天，用户可再改
+    const prevEnd = new Date(r.endAt.replace(/-/g, '/'));
+    const base = isNaN(prevEnd.getTime()) ? new Date() : prevEnd;
+    const end = new Date(base.getTime() + 86400000);
+    renew = { start: base, end: end, originEnd: r.endAt };
+    openSheet('rEndDate');
+    toast('选择续假后的结束时间');
+  }
+
+  function setRenewPart(base, nd){
+    if (!renew) renew = { start: new Date(), end: new Date(), originEnd: '' };
+    if (base === 'rStart') renew.start = nd;
+    else renew.end = nd;
+    closeSheet();
+
+    const endMs = renew.end.getTime();
+    const startMs = new Date(currentRecord.startAt.replace(/-/g, '/')).getTime();
+    if (!(endMs > startMs)) return toast('结束时间必须晚于原请假开始时间');
+
+    const days = String(Math.round((endMs - startMs) / 86400000 * 100) / 100);
+    showDialog('续假申请', '将请假结束时间从 ' + renew.originEnd + ' 延长至 ' + fmt(renew.end) + '，共 ' + days + ' 天。', '提交续假', () => {
+      currentRecord.endAt = fmt(renew.end);
+      currentRecord.days = days;
+      currentRecord.renewals = currentRecord.renewals || [];
+      currentRecord.renewals.unshift({ at: fmt(new Date()), endAt: fmt(renew.end), days: days });
+      renderDetail();
+      renderRecords();
+      toast('续假申请已通过');
+    });
   }
 
   function toggleMore(){
