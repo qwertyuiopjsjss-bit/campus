@@ -112,6 +112,17 @@
   }
   .mine-avatar img{width:100%;height:100%;object-fit:cover;display:block}
   .mine-avatar svg{width:38px;height:38px;fill:#6f6f76}
+  .mine-avatar:active{opacity:.7}
+  /* 视觉隐藏但仍然可被浏览器唤起（iOS 上 display:none / hidden 会失效） */
+  .visually-hidden{
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+    clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0;
+  }
+  .avatar-edit{
+    position:absolute;right:-2px;bottom:-2px;width:22px;height:22px;border-radius:50%;
+    background:#0a66d0;color:#fff;font-size:12px;line-height:22px;text-align:center;
+    box-shadow:0 1px 4px rgba(0,0,0,.5);
+  }
   .mine-name-row{
     display:flex;align-items:center;justify-content:space-between;gap:10px;
     padding:0 14px 16px;
@@ -753,10 +764,13 @@
             <span class="mine-badge">M</span>
           </div>
         </div>
-        <div class="mine-avatar" id="mineAvatar" onclick="pickAvatar()">
+        <label class="mine-avatar" id="mineAvatar" for="avatarInput">
           <svg viewBox="0 0 24 24"><path d="M12 12.6a4.3 4.3 0 1 0 0-8.6 4.3 4.3 0 0 0 0 8.6Zm0 1.8c-4.2 0-7.6 2.4-7.6 5.4V21h15.2v-1.2c0-3-3.4-5.4-7.6-5.4Z"/></svg>
-        </div>
+          <span class="avatar-edit" aria-hidden="true">✎</span>
+        </label>
       </div>
+
+      <input type="file" id="avatarInput" accept="image/*" class="visually-hidden">
 
       <div class="mine-sub" onclick="toast('对外名片：暂未开放')">
         <span>对外名片</span>
@@ -799,11 +813,11 @@
         </div>
       </div>
 
-      <p class="mine-foot">点头像可以换照片 · 点名字可以改名</p>
+      <p class="mine-foot">点右下角 ✎ 换头像 · 点名字可以改名</p>
     </div>
   </section>
 
-  <input type="file" id="avatarInput" accept="image/*" hidden>
+
 
   <!-- 选择面板 -->
   <div class="sheet-mask" id="sheetMask">
@@ -905,9 +919,11 @@
     if (av) {
       av.addEventListener('change', async () => {
         const file = av.files && av.files[0];
-        av.value = '';
         if (!file) return;
-        if (!/^image\//.test(file.type)) return toast('请选择图片文件');
+        // 有些机型（比如 iPhone 的 HEIC）file.type 可能是空的，用后缀兜底
+        const looksImage = /^image\//.test(file.type) || /\.(jpe?g|png|gif|webp|heic|heif|bmp)$/i.test(file.name || '');
+        if (!looksImage){ av.value = ''; return toast('请选择一张图片'); }
+        toast('正在处理图片…');
         try {
           const url = await shrinkImage(file, 200);
           profile.avatar = url;
@@ -915,7 +931,9 @@
           renderAvatar();
           toast('头像已更新');
         } catch (e) {
-          toast('这张图读不了，换一张试试');
+          toast(e && e.message === 'decode' ? '这张图读不了（可能是 HEIC 格式），换一张试试' : '处理失败，换一张试试');
+        } finally {
+          av.value = '';
         }
       });
     }
@@ -1434,31 +1452,32 @@
     }
   }
 
-  function pickAvatar(){
-    const input = document.getElementById('avatarInput');
-    if (input) input.click();
-  }
-
   // 压成正方形 JPEG，避免把几 MB 的原图塞进 localStorage（有 5MB 上限）
   function shrinkImage(file, size){
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = () => reject(new Error('读取失败'));
-      reader.onload = () => {
-        const img = new Image();
-        img.onerror = () => reject(new Error('不是有效的图片'));
-        img.onload = () => {
+      const url = URL.createObjectURL(file);        // 比 FileReader 更稳，尤其实在 iOS 上
+      const img = new Image();
+      const done = (ok, val) => {
+        try { URL.revokeObjectURL(url); } catch (e) {}
+        ok ? resolve(val) : reject(val);
+      };
+      img.onerror = () => done(false, new Error('decode'));
+      img.onload = () => {
+        try {
           const canvas = document.createElement('canvas');
           canvas.width = size; canvas.height = size;
           const ctx = canvas.getContext('2d');
-          const side = Math.min(img.width, img.height);       // 居中裁成正方形
+          const side = Math.min(img.width, img.height);   // 居中裁成正方形
           const sx = (img.width - side) / 2, sy = (img.height - side) / 2;
           ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
-          resolve(canvas.toDataURL('image/jpeg', 0.82));
-        };
-        img.src = reader.result;
+          const out = canvas.toDataURL('image/jpeg', 0.82);
+          if (!out || out.length < 100) return done(false, new Error('empty'));
+          done(true, out);
+        } catch (e) {
+          done(false, e);
+        }
       };
-      reader.readAsDataURL(file);
+      img.src = url;
     });
   }
 
