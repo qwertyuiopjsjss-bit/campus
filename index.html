@@ -96,6 +96,51 @@
     color:#fff;font-size:11px;line-height:17px;text-align:center;padding:0 4px;font-weight:600;
   }
 
+  /* ---------- 「我」页面 ---------- */
+  .mine-group{background:#1c1c1e;border-radius:12px;margin:12px 12px 0;overflow:hidden}
+  .mine-card{
+    background:#1c1c1e;border-radius:12px;margin:12px 12px 0;
+    display:flex;align-items:center;gap:12px;padding:18px 14px;cursor:pointer;
+  }
+  .mine-card:active{background:#242427}
+  .mine-school{
+    display:flex;align-items:center;gap:6px;font-size:15px;color:#e9e9ee;flex:1 1 auto;
+  }
+  .mine-school svg{width:18px;height:18px;flex:0 0 auto}
+  .mine-avatar{
+    width:64px;height:64px;border-radius:10px;overflow:hidden;flex:0 0 auto;
+    background:#2c2c2e;display:grid;place-items:center;position:relative;
+  }
+  .mine-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+  .mine-avatar svg{width:38px;height:38px;fill:#6f6f76}
+  .mine-name-row{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:0 14px 16px;
+  }
+  .mine-name{font-size:25px;font-weight:700;color:#fff;letter-spacing:.5px}
+  .mine-badge{
+    width:24px;height:24px;border-radius:50%;background:#f0a020;flex:0 0 auto;
+    display:grid;place-items:center;font-size:13px;font-weight:700;color:#fff;
+  }
+  .mine-card-inner{flex:1 1 auto;min-width:0}
+  .mine-card-top{display:flex;align-items:flex-start;gap:12px}
+  .mine-sub{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 14px 0;margin-top:2px;color:#8e8e93;font-size:15px;
+  }
+  .mine-sub:active{opacity:.6}
+  .mine-sub .qr{display:flex;gap:3px;flex-wrap:wrap;width:18px}
+  .mine-sub .qr i{width:7px;height:7px;background:#8e8e93;border-radius:1px}
+  .mine-row{
+    display:flex;align-items:center;gap:14px;padding:17px 14px;font-size:16.5px;color:#e9e9ee;
+    border-bottom:1px solid #26262a;cursor:pointer;
+  }
+  .mine-group .mine-row:last-child{border-bottom:0}
+  .mine-row:active{background:#26262a}
+  .mine-row .mi{width:26px;height:26px;flex:0 0 auto}
+  .mine-row .mi svg{width:26px;height:26px;display:block}
+  .mine-foot{text-align:center;color:#4a4a50;font-size:12px;padding:22px 0 26px}
+
   /* ---------- 图二：请假列表 ---------- */
   .notice{
     background:#3a3320;color:#ffd75e;font-size:13px;line-height:1.5;
@@ -162,6 +207,9 @@
   }
   .editable:active{background:#eef2f8}
   .editable::after{content:" ✎";font-size:.72em;color:#9aa6bb;font-weight:400}
+  .editable-dark{border-bottom:1px dashed #4a4a50;cursor:pointer;padding-bottom:2px}
+  .editable-dark:active{background:#2a2a2e}
+  .editable-dark::after{content:" ✎";font-size:.55em;color:#6f6f76;font-weight:400;vertical-align:middle}
   .hero-name h2 i{font-style:normal;font-size:11.5px;font-weight:400;color:#6b7280;background:#f0f1f4;border-radius:4px;padding:2px 6px}
   .hero-name p{margin:6px 0 0;font-size:12.5px;color:#8a8a90;line-height:1.4}
   .hero-id{font-size:13px;color:#b6b9c0;letter-spacing:.5px;padding-top:6px}
@@ -468,7 +516,7 @@
       <button data-toast="文档"><svg viewBox="0 0 24 24"><path d="M6 2h8l5 5v15H6V2Zm7.5 1.4V8H18l-4.5-4.6Z"/></svg><span>文档</span></button>
       <button data-toast="通讯录"><svg viewBox="0 0 24 24"><path d="M9 4h11v2H9V4Zm0 5h11v2H9V9Zm0 5h11v2H9v-2ZM4 5.5a1.6 1.6 0 1 1 3.2 0 1.6 1.6 0 0 1-3.2 0Zm0 5a1.6 1.6 0 1 1 3.2 0 1.6 1.6 0 0 1-3.2 0Zm0 5a1.6 1.6 0 1 1 3.2 0 1.6 1.6 0 0 1-3.2 0Z"/></svg><span>通讯录</span></button>
       <button class="on" data-toast="工作台"><svg viewBox="0 0 24 24"><path d="M3 3h8v8H3V3Zm10 0h8v5h-8V3ZM3 13h8v8H3v-8Zm10-3h8v11h-8V10Z"/></svg><span>工作台</span></button>
-      <button data-toast="我"><svg viewBox="0 0 24 24"><path d="M12 3a4.2 4.2 0 1 0 0 8.4A4.2 4.2 0 0 0 12 3Zm0 10.4c-4.3 0-7.8 2-7.8 4.6V21h15.6v-3c0-2.6-3.5-4.6-7.8-4.6Z"/></svg><span>我</span></button>
+      <button type="button" class="on" onclick="go('mine')"><svg viewBox="0 0 24 24"><path d="M12 3a4.2 4.2 0 1 0 0 8.4A4.2 4.2 0 0 0 12 3Zm0 10.4c-4.3 0-7.8 2-7.8 4.6V21h15.6v-3c0-2.6-3.5-4.6-7.8-4.6Z"/></svg><span>我</span></button>
     </nav>
   </section>
 
@@ -677,6 +725,82 @@
     </div>
   </section>
 
+  <!-- ============ 「我」 ============ -->
+  <section class="screen tabbed" id="screen-mine">
+    <div class="bar">
+      <div class="left"></div>
+      <div class="title">我</div>
+      <div class="right"></div>
+    </div>
+
+    <div class="body">
+      <div class="mine-card">
+        <div class="mine-card-inner">
+          <div class="mine-school">
+            荆州学院
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="11" fill="#22c55e"/>
+              <path d="M7 12.4 10.4 16 17 9" fill="none" stroke="#fff" stroke-width="2.4"
+                stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="mine-name-row" style="padding:14px 0 0">
+            <span class="mine-name"><span id="mineName" class="editable-dark" onclick="editName()">魏靖文</span></span>
+            <span class="mine-badge">M</span>
+          </div>
+        </div>
+        <div class="mine-avatar" id="mineAvatar" onclick="pickAvatar()">
+          <svg viewBox="0 0 24 24"><path d="M12 12.6a4.3 4.3 0 1 0 0-8.6 4.3 4.3 0 0 0 0 8.6Zm0 1.8c-4.2 0-7.6 2.4-7.6 5.4V21h15.2v-1.2c0-3-3.4-5.4-7.6-5.4Z"/></svg>
+        </div>
+      </div>
+
+      <div class="mine-sub" onclick="toast('对外名片：暂未开放')">
+        <span>对外名片</span>
+        <span class="qr"><i></i><i></i><i></i><i></i></span>
+      </div>
+
+      <div class="mine-group">
+        <div class="mine-row" onclick="toast('收藏：暂时是空的')">
+          <span class="mi">
+            <svg viewBox="0 0 24 24"><path d="M12 2 3 7v10l9 5 9-5V7l-9-5Zm0 2.3 6.6 3.7L12 11.7 5.4 8 12 4.3ZM5 9.6l6 3.4v6.7l-6-3.3V9.6Zm8 10.1V13l6-3.4v6.8l-6 3.3Z" fill="#f5a623"/></svg>
+          </span>
+          <span>收藏</span>
+        </div>
+        <div class="mine-row" onclick="toast('红包：暂未开放')">
+          <span class="mi">
+            <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3" fill="#e8453c"/><path d="M3 9h18v1.6H3z" fill="#ff8a80"/><circle cx="12" cy="13" r="3.2" fill="#ffd166"/></svg>
+          </span>
+          <span>红包</span>
+        </div>
+        <div class="mine-row" onclick="toast('通勤：暂未开放')">
+          <span class="mi">
+            <svg viewBox="0 0 24 24"><path d="M12 2a7.5 7.5 0 0 0-7.5 7.5C4.5 15 12 22 12 22s7.5-7 7.5-12.5A7.5 7.5 0 0 0 12 2Zm0 10.2a2.7 2.7 0 1 1 0-5.4 2.7 2.7 0 0 1 0 5.4Z" fill="#f5a623"/></svg>
+          </span>
+          <span>通勤</span>
+        </div>
+      </div>
+
+      <div class="mine-group">
+        <div class="mine-row" onclick="toast('帮助：暂未开放')">
+          <span class="mi">
+            <svg viewBox="0 0 24 24"><path d="M12 3c5 0 9 3.3 9 7.4 0 4.1-4 7.4-9 7.4-.8 0-1.6-.1-2.3-.2L5 20l1.2-3.3A6.9 6.9 0 0 1 3 10.4C3 6.3 7 3 12 3Zm-2.1 9.4h4.2v1.5H9.9v-1.5Z" fill="#3b82f6"/></svg>
+          </span>
+          <span>帮助</span>
+        </div>
+        <div class="mine-row" onclick="toast('设置：暂未开放')">
+          <span class="mi">
+            <svg viewBox="0 0 24 24"><path d="M12 8.4a3.6 3.6 0 1 0 0 7.2 3.6 3.6 0 0 0 0-7.2Zm8.4 3.6c0-.5 0-1-.1-1.4l2-1.5-2-3.4-2.3.9c-.7-.6-1.5-1-2.3-1.3L15.3 3H8.7l-.4 2.3c-.8.3-1.6.7-2.3 1.3l-2.3-.9-2 3.4 2 1.5c-.1.4-.1.9-.1 1.4s0 1 .1 1.4l-2 1.5 2 3.4 2.3-.9c.7.6 1.5 1 2.3 1.3l.4 2.3h6.6l.4-2.3c.8-.3 1.6-.7 2.3-1.3l2.3.9 2-3.4-2-1.5c.1-.4.1-.9.1-1.4Z" fill="#8e8e93"/></svg>
+          </span>
+          <span>设置</span>
+        </div>
+      </div>
+
+      <p class="mine-foot">点头像可以换照片 · 点名字可以改名</p>
+    </div>
+  </section>
+
+  <input type="file" id="avatarInput" accept="image/*" hidden>
+
   <!-- 选择面板 -->
   <div class="sheet-mask" id="sheetMask">
     <div class="sheet">
@@ -767,6 +891,26 @@
     document.querySelectorAll('[data-toast]').forEach(el => {
       el.addEventListener('click', () => toast(el.dataset.toast));
     });
+    // 选完头像图片
+    const av = document.getElementById('avatarInput');
+    if (av) {
+      av.addEventListener('change', async () => {
+        const file = av.files && av.files[0];
+        av.value = '';
+        if (!file) return;
+        if (!/^image\//.test(file.type)) return toast('请选择图片文件');
+        try {
+          const url = await shrinkImage(file, 200);
+          profile.avatar = url;
+          saveProfile();
+          renderAvatar();
+          toast('头像已更新');
+        } catch (e) {
+          toast('这张图读不了，换一张试试');
+        }
+      });
+    }
+
     // 输入框里按回车 = 点确定
     const input = document.getElementById('dialogInput');
     if (input) {
@@ -1202,9 +1346,53 @@
 
   function renderProfile(){
     const n = document.getElementById('editName');
+    const m = document.getElementById('mineName');
     const r = document.getElementById('editReviewer');
     if (n) n.textContent = profile.name;
+    if (m) m.textContent = profile.name;
     if (r) r.textContent = profile.reviewer;
+    renderAvatar();
+  }
+
+  /* ---------------- 头像：选一张图，压到 200×200 存本机 ---------------- */
+  function renderAvatar(){
+    const box = document.getElementById('mineAvatar');
+    if (!box) return;
+    if (profile.avatar){
+      box.innerHTML = '';
+      const img = document.createElement('img');
+      img.alt = '头像';
+      img.src = profile.avatar;
+      box.appendChild(img);
+    }
+  }
+
+  function pickAvatar(){
+    const input = document.getElementById('avatarInput');
+    if (input) input.click();
+  }
+
+  // 压成正方形 JPEG，避免把几 MB 的原图塞进 localStorage（有 5MB 上限）
+  function shrinkImage(file, size){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('读取失败'));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error('不是有效的图片'));
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = size; canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          const side = Math.min(img.width, img.height);       // 居中裁成正方形
+          const sx = (img.width - side) / 2, sy = (img.height - side) / 2;
+          ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+          resolve(canvas.toDataURL('image/jpeg', 0.82));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
   }
 
   function renderRecords(){
