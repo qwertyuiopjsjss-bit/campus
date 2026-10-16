@@ -120,12 +120,14 @@
   .empty p{color:#6b6b72;font-size:14px;margin:0}
 
   /* ---------- 记录卡片（列表里那条小板）---------- */
-  .records{padding:0 12px 16px;display:flex;flex-direction:column;gap:10px}
+  .records{padding:0 12px 4px;display:flex;flex-direction:column;gap:10px}
+  .list-tip{margin:0 0 16px;padding:0 14px;font-size:12.5px;color:#9aa0a8}
   .rec{
     background:#fff;border-radius:10px;padding:14px;color:#1a1a1c;cursor:pointer;
     box-shadow:0 1px 6px rgba(0,0,0,.35);
   }
   .rec:active{background:#f2f2f5}
+  .rec.pressing{background:#eceef2;transform:scale(.985);transition:transform .12s ease}
   .rec b{display:block;font-size:15.5px;font-weight:600;margin-bottom:10px}
   .rec .f{display:flex;font-size:14px;margin-bottom:6px;color:#8a8a90}
   .rec .f:last-of-type{margin-bottom:0}
@@ -444,6 +446,7 @@
       </div>
 
       <div class="records" id="recordList"></div>
+      <p class="list-tip">长按卡片可以删除这条记录</p>
 
       <div class="empty" id="emptyState">
         <svg viewBox="0 0 120 78" width="120" height="78" aria-hidden="true">
@@ -978,6 +981,7 @@
       cancelled: false
     });
 
+    saveRecords();
     renderRecords();
     toast('提交成功，已提交辅导员审核');
     setTimeout(() => {
@@ -986,8 +990,27 @@
     }, 700);
   }
 
-  /* ---------------- 假期记录 ---------------- */
-  const records = [];
+  /* ---------------- 假期记录（存在本机浏览器里，刷新不丢）---------------- */
+  const STORE_KEY = 'campus.leaveRecords.v1';
+
+  function loadRecords(){
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      const list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch (e) {
+      return [];   // 隐私模式 / 存储被禁 → 退化成"刷新就丢"，但不能白屏
+    }
+  }
+  function saveRecords(){
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(records));
+    } catch (e) {
+      /* 存不下就算了，页面照常用 */
+    }
+  }
+
+  const records = loadRecords();
 
   function renderRecords(){
     const box = document.getElementById('recordList');
@@ -1000,6 +1023,7 @@
       const el = document.createElement('div');
       el.className = 'rec';
       el.onclick = () => openDetail(r.id);
+      bindLongPress(el, r);
 
       const title = document.createElement('b');
       title.textContent = r.nature;
@@ -1033,6 +1057,62 @@
       el.appendChild(tags);
 
       box.appendChild(el);
+    });
+  }
+
+  /* ---------------- 长按卡片删除 ---------------- */
+  const LONG_PRESS_MS = 550;
+
+  function bindLongPress(el, record){
+    let timer = null, startX = 0, startY = 0, fired = false;
+
+    const clear = () => { clearTimeout(timer); timer = null; el.classList.remove('pressing'); };
+    const begin = (x, y) => {
+      startX = x; startY = y; fired = false;
+      el.classList.add('pressing');
+      timer = setTimeout(() => {
+        fired = true;
+        el.classList.remove('pressing');
+        askDelete(record.id);
+      }, LONG_PRESS_MS);
+    };
+    const move = (x, y) => {
+      // 手指滑走（在滚动列表）就取消，别误删
+      if (Math.abs(x - startX) > 10 || Math.abs(y - startY) > 10) clear();
+    };
+
+    el.addEventListener('touchstart', (e) => {
+      const t = e.touches && e.touches[0];
+      if (t) begin(t.clientX, t.clientY);
+    }, { passive: true });
+    el.addEventListener('touchmove', (e) => {
+      const t = e.touches && e.touches[0];
+      if (t) move(t.clientX, t.clientY);
+    }, { passive: true });
+    el.addEventListener('touchend', clear);
+    el.addEventListener('touchcancel', clear);
+
+    // 桌面/鼠标也能测
+    el.addEventListener('mousedown', (e) => begin(e.clientX, e.clientY));
+    el.addEventListener('mousemove', (e) => { if (timer) move(e.clientX, e.clientY); });
+    el.addEventListener('mouseup', clear);
+    el.addEventListener('mouseleave', clear);
+
+    // 长按已经弹过确认框了，这次 click 不该再进详情
+    el.addEventListener('click', (e) => {
+      if (fired){ fired = false; e.stopPropagation(); e.preventDefault(); }
+    }, true);
+  }
+
+  function askDelete(id){
+    const r = records.find((x) => x.id === id);
+    if (!r) return;
+    showDialog('删除记录', '确定删除「' + r.nature + ' ' + r.days + ' 天」这条请假记录吗？删除后无法恢复。', '删除', () => {
+      const i = records.findIndex((x) => x.id === id);
+      if (i >= 0) records.splice(i, 1);
+      saveRecords();
+      renderRecords();
+      toast('已删除');
     });
   }
 
@@ -1137,6 +1217,7 @@
     if (r.cancelled) return toast('这条记录已经销假了');
     showDialog('定位销假', '需要确认你已回到校内，销假后本条请假记录将标记为「已销假」。', '确认销假', () => {
       r.cancelled = true;
+      saveRecords();
       renderDetail();
       renderRecords();
       toast('销假成功');
@@ -1174,6 +1255,7 @@
       currentRecord.days = days;
       currentRecord.renewals = currentRecord.renewals || [];
       currentRecord.renewals.unshift({ at: fmt(new Date()), endAt: fmt(renew.end), days: days });
+      saveRecords();
       renderDetail();
       renderRecords();
       toast('续假申请已通过');
