@@ -272,6 +272,7 @@
     padding:8px 0 calc(10px + env(safe-area-inset-bottom));
   }
   .sheet h4{margin:0;padding:14px 18px 10px;font-size:14px;color:var(--muted);font-weight:400}
+  #sheetOptions{max-height:52vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
   .sheet button{
     width:100%;border:0;background:none;color:#e9e9ee;font:inherit;font-size:16px;
     padding:14px 18px;text-align:left;cursor:pointer;border-top:1px solid #262629;
@@ -505,12 +506,12 @@
           <span class="v"><span data-slot="days">请指定请假类型</span><span class="chev">›</span></span>
         </div>
 
-        <div class="row tap" data-picker="startAt">
+        <div class="row tap" data-picker="startAt" data-dt="1">
           <span class="k"><em>*</em>开始时间</span>
           <span class="v"><span data-slot="startAt">请选择</span><span class="chev">›</span></span>
         </div>
 
-        <div class="row tap" data-picker="endAt">
+        <div class="row tap" data-picker="endAt" data-dt="1">
           <span class="k"><em>*</em>结束时间</span>
           <span class="v"><span data-slot="endAt">请选择</span><span class="chev">›</span></span>
         </div>
@@ -590,7 +591,7 @@
         <div class="line"><span class="k">是否出校</span><span class="v" id="dOut">—</span></div>
         <div class="line"><span class="k">请假事由</span><span class="v" id="dReason">—</span></div>
         <div class="line"><span class="k">手机号</span><span class="v" id="dPhone">—</span></div>
-        <div class="more" id="dMore" onclick="toggleMore()">展开 <span id="dMoreIcon">⌄</span></div>
+        <div class="more" id="dMore" onclick="toggleMore()"><span id="dMoreText">展开</span> <span id="dMoreIcon">⌄</span></div>
       </div>
 
       <!-- 销假信息 -->
@@ -715,7 +716,11 @@
       el.addEventListener('click', () => toast(el.dataset.toast));
     });
     document.querySelectorAll('[data-picker]').forEach(row => {
-      row.addEventListener('click', () => openSheet(row.dataset.picker));
+      row.addEventListener('click', () => {
+        // 日期时间的行：一次弹出"日期 + 时间"，两样都能改
+        const key = row.dataset.dt ? row.dataset.picker + 'DateTime' : row.dataset.picker;
+        openSheet(key);
+      });
     });
   }
   window.addEventListener('error', e => {
@@ -803,13 +808,21 @@
     let base = key, part = '';
     if (MAP[key]) { base = MAP[key][0]; part = MAP[key][1]; }
 
-    const cfg = SELECTS[key];
+    // "日期 + 时间"合并面板：选日期或选时间都作用在同一个字段上
+    const isDateTime = /^(startAt|endAt|rStart|rEnd)DateTime$/.test(key);
+    if (isDateTime) {
+      base = key.replace('DateTime', '');
+      part = 'datetime';
+    }
+
+    const cfg = isDateTime ? { title: '选择日期和时间', kind: 'datetime' } : SELECTS[key];
     if (!cfg) return;
     currentPicker = { key, base, part };
 
     let opts;
     if (cfg.kind === 'date') opts = dateOptions();
     else if (cfg.kind === 'time') opts = timeOptions();
+    else if (cfg.kind === 'datetime') opts = dateOptions().concat(timeOptions());
     else opts = cfg.options;
 
     document.getElementById('sheetTitle').textContent = cfg.title;
@@ -849,12 +862,10 @@
   }
   function timeOptions(){
     const out = [];
-    const ring = (h) => (h + 24) % 24;   // 比如 23:30 往后半小时 = 次日 00:00
-    for (let i = 0; i < 60; i++){
-      const t = roundHalf(new Date());
-      t.setMinutes(t.getMinutes() + i * 30);
-      const h = ring(t.getHours()), m = t.getMinutes();
-      out.push({ label: pad(h) + ':' + pad(m), pick: () => setTimePart(h, m) });
+    for (let h = 0; h < 24; h++){
+      for (const m of [0, 30]){
+        out.push({ label: pad(h) + ':' + pad(m), pick: () => setTimePart(h, m) });
+      }
     }
     return out;
   }
@@ -1077,20 +1088,26 @@
   function bindLongPress(el, record){
     let timer = null, startX = 0, startY = 0, fired = false;
 
-    const clear = () => { clearTimeout(timer); timer = null; el.classList.remove('pressing'); };
-    const begin = (x, y) => {
+    function cancel(){
+      if (timer !== null){ clearTimeout(timer); timer = null; }
+      el.classList.remove('pressing');
+    }
+    function begin(x, y){
+      cancel();                     // 上一次的残留先清掉，避免定时器叠加
       startX = x; startY = y; fired = false;
       el.classList.add('pressing');
       timer = setTimeout(() => {
+        timer = null;
         fired = true;
         el.classList.remove('pressing');
         askDelete(record.id);
       }, LONG_PRESS_MS);
-    };
-    const move = (x, y) => {
+    }
+    function moved(x, y){
+      if (timer === null) return;
       // 手指滑走（在滚动列表）就取消，别误删
-      if (Math.abs(x - startX) > 10 || Math.abs(y - startY) > 10) clear();
-    };
+      if (Math.abs(x - startX) > 10 || Math.abs(y - startY) > 10) cancel();
+    }
 
     el.addEventListener('touchstart', (e) => {
       const t = e.touches && e.touches[0];
@@ -1098,18 +1115,18 @@
     }, { passive: true });
     el.addEventListener('touchmove', (e) => {
       const t = e.touches && e.touches[0];
-      if (t) move(t.clientX, t.clientY);
+      if (t) moved(t.clientX, t.clientY);
     }, { passive: true });
-    el.addEventListener('touchend', clear);
-    el.addEventListener('touchcancel', clear);
+    el.addEventListener('touchend', cancel);
+    el.addEventListener('touchcancel', cancel);
 
-    // 桌面/鼠标也能测
+    // 桌面/鼠标也能用（顺便方便自动化测试）
     el.addEventListener('mousedown', (e) => begin(e.clientX, e.clientY));
-    el.addEventListener('mousemove', (e) => { if (timer) move(e.clientX, e.clientY); });
-    el.addEventListener('mouseup', clear);
-    el.addEventListener('mouseleave', clear);
+    el.addEventListener('mousemove', (e) => moved(e.clientX, e.clientY));
+    el.addEventListener('mouseup', cancel);
+    el.addEventListener('mouseleave', cancel);
 
-    // 长按已经弹过确认框了，这次 click 不该再进详情
+    // 长按已经弹过确认框了，这一下 click 不该再进详情
     el.addEventListener('click', (e) => {
       if (fired){ fired = false; e.stopPropagation(); e.preventDefault(); }
     }, true);
@@ -1195,8 +1212,13 @@
     btn.style.opacity = r.cancelled ? '.5' : '';
     btn.textContent = r.cancelled ? '已销假' : '定位销假';
 
-    document.getElementById('dMoreIcon').textContent = '⌄';
-    document.getElementById('dMore').firstChild.textContent = '展开 ';
+    setMoreLabel(false);
+  }
+
+  // 展开/收起按钮的文字与箭头
+  function setMoreLabel(open){
+    document.getElementById('dMoreText').textContent = open ? '收起' : '展开';
+    document.getElementById('dMoreIcon').textContent = open ? '⌃' : '⌄';
   }
 
   /* ---------------- 通用确认弹窗 ---------------- */
@@ -1254,14 +1276,20 @@
     if (!renew) renew = { start: new Date(), end: new Date(), originEnd: '' };
     if (base === 'rStart') renew.start = nd;
     else renew.end = nd;
-    closeSheet();
 
     const endMs = renew.end.getTime();
-    const startMs = new Date(currentRecord.startAt.replace(/-/g, '/')).getTime();
-    if (!(endMs > startMs)) return toast('结束时间必须晚于原请假开始时间');
+    const curEndMs = new Date(currentRecord.endAt.replace(/-/g, '/')).getTime();
+    if (!(endMs > curEndMs)) {
+      // 续假是"往后延"，新结束时间必须晚于当前结束时间，否则就是把假期改短了
+      toast('续假要晚于当前结束时间 ' + currentRecord.endAt);
+      return;   // 不关面板，让用户接着改
+    }
+    closeSheet();
 
+    // 天数按"原请假开始时间 → 新的结束时间"重算
+    const startMs = new Date(currentRecord.startAt.replace(/-/g, '/')).getTime();
     const days = String(Math.round((endMs - startMs) / 86400000 * 100) / 100);
-    showDialog('续假申请', '将请假结束时间从 ' + renew.originEnd + ' 延长至 ' + fmt(renew.end) + '，共 ' + days + ' 天。', '提交续假', () => {
+    showDialog('续假申请', '将请假结束时间从 ' + renew.originEnd + ' 延长至 ' + fmt(renew.end) + '，请假共 ' + days + ' 天。', '提交续假', () => {
       currentRecord.endAt = fmt(renew.end);
       currentRecord.days = days;
       currentRecord.renewals = currentRecord.renewals || [];
@@ -1276,8 +1304,7 @@
   function toggleMore(){
     const card = document.getElementById('dMore').closest('.dcard');
     const open = card.classList.toggle('open');
-    document.getElementById('dMoreIcon').textContent = open ? '⌃' : '⌄';
-    document.getElementById('dMore').firstChild.textContent = open ? '收起 ' : '展开 ';
+    setMoreLabel(open);
   }
 
   /* ---------------- 表单复位 ---------------- */
