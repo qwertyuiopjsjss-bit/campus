@@ -61,7 +61,6 @@
     background:var(--panel);border-radius:10px;margin:0 12px;padding:16px 6px 18px;
     display:grid;grid-template-columns:repeat(4,1fr);row-gap:20px;
   }
-  .card.solo{grid-template-columns:repeat(4,1fr)}
 
   .app-icon{
     border:0;background:none;padding:0;color:inherit;font:inherit;
@@ -123,7 +122,6 @@
     display:grid;place-items:center;font-size:13px;font-weight:700;color:#fff;
   }
   .mine-card-inner{flex:1 1 auto;min-width:0}
-  .mine-card-top{display:flex;align-items:flex-start;gap:12px}
   .mine-sub{
     display:flex;align-items:center;justify-content:space-between;
     padding:14px 14px 0;margin-top:2px;color:#8e8e93;font-size:15px;
@@ -177,7 +175,8 @@
   .rec .f{display:flex;font-size:14px;margin-bottom:6px;color:#8a8a90}
   .rec .f:last-of-type{margin-bottom:0}
   .rec .f span:first-child{flex:0 0 84px}
-  .rec .f span:last-child{color:#1a1a1c}
+  .rec .f span:last-child{color:#1a1a1c;flex:1 1 auto;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .rec .tags{display:flex;gap:8px;margin-top:12px}
   .tag{font-size:12px;padding:3px 8px;border-radius:4px}
   .tag.warn{background:#fff4e0;color:#d98b00}
@@ -850,14 +849,19 @@
 <script>
   /* ---------------- 屏幕栈 ---------------- */
   const stack = ['screen-workbench'];
+  let submitting = false;     // 防连点
+  let suppressReset = false;  // 提交返回时跳过表单复位
 
   // 允许 data-nav 写 "leave-list" 或 "screen-leave-list"，统一补上前缀
   function screenId(name){
     return name.startsWith('screen-') ? name : 'screen-' + name;
   }
 
+  // 提交流程里不要复位表单（否则成功提示来不及显示），所以用一个标志跳过
+  const NO_RESET = ['screen-leave-new'];
+
   function show(id){
-    // 目标屏幕不存在就什么都不做——绝不先把当前屏幕藏了，否则就是一片黑
+    if (id === 'screen-leave-new' && !suppressReset) resetForm();
     if (!document.getElementById(id)) return false;
     document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
     const el = document.getElementById(id);
@@ -948,9 +952,6 @@
   function fmt(dt){
     return dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate())
       + ' ' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());
-  }
-  function fmtShort(dt){
-    return pad(dt.getMonth() + 1) + '-' + pad(dt.getDate()) + ' ' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());
   }
   function roundHalf(dt){
     const d = new Date(dt.getTime());
@@ -1249,6 +1250,7 @@
 
   /* ---------------- 提交 ---------------- */
   function submitLeave(){
+    if (submitting) return;        // 防止连点产生两条记录
     if (!chosen.nature) return toast('请选择请假性质');
     if (!chosen.type) return toast('请选择请假类型');
     if (!chosen.startAt || !chosen.endAt) return toast('请选择开始和结束时间');
@@ -1258,6 +1260,9 @@
     const phoneEl = document.getElementById('phone');
     const phone = phoneEl.value.trim();
     if (!/^1\d{10}$/.test(phone)) return toast('请输入正确的手机号');
+
+    submitting = true;
+    setTimeout(() => { submitting = false; }, 800);
 
     const now = new Date();
     records.unshift({
@@ -1280,10 +1285,9 @@
     saveRecords();
     renderRecords();
     toast('提交成功，已提交辅导员审核');
-    setTimeout(() => {
-      back();
-      resetForm();
-    }, 700);
+    suppressReset = true;          // 返回列表时不要复位（复位已经在下面做了）
+    setTimeout(() => { back(); suppressReset = false; }, 700);
+    resetForm();                   // 立刻复位：连点第二次会因为必填为空而被拦住
   }
 
   /* ---------------- 假期记录（存在本机浏览器里，刷新不丢）---------------- */
@@ -1426,6 +1430,7 @@
       field('请假天数', r.days + ' 天');
       field('开始时间', r.startAt);
       field('结束时间', r.endAt);
+      field('请假事由', r.reason);          // 没有事由的话，两条相似记录根本分不清
 
       const tags = document.createElement('div');
       tags.className = 'tags';
@@ -1512,6 +1517,9 @@
     const r = records.find((x) => x.id === id);
     if (!r) return;
     currentRecord = r;
+    // 每条记录都从"收起"开始，别把上一条的展开状态带过来
+    const card = document.getElementById('dMore') && document.getElementById('dMore').closest('.dcard');
+    if (card) card.classList.remove('open');
     renderDetail();
     go('leave-detail');
   }
