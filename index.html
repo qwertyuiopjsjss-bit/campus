@@ -338,14 +338,19 @@
   }
   .dt-col{
     flex:1 1 0;overflow-y:auto;-webkit-overflow-scrolling:touch;
-    padding:99px 0;                 /* 上下留白，让首尾也能滚到高亮区 */
+    /* 上下留白让首尾项也能停到中间；不再用 padding，改用 spacer 元素，
+       否则 scroll-snap 的吸附对齐会算偏 */
     scrollbar-width:none;
+    scroll-snap-type:y mandatory;    /* 关键：松手后只会停在整行上 */
+    overscroll-behavior:contain;     /* 滚到头不要带着整页一起滚 */
   }
   .dt-col::-webkit-scrollbar{display:none}
   .dt-col + .dt-col{border-left:1px solid #262629}
+  .dt-spacer{height:99px;flex:0 0 auto}
   .dt-opt{
     height:44px;line-height:44px;text-align:center;font-size:16px;color:#6f6f76;
     cursor:pointer;font-variant-numeric:tabular-nums;
+    scroll-snap-align:center;        /* 每行都是吸附点 */
   }
   .dt-opt.on{color:#fff;font-weight:600}
   .dt-actions{display:flex;border-top:1px solid #262629;margin-top:4px}
@@ -1072,10 +1077,11 @@
     showPickerMode();
     document.getElementById('sheetMask').classList.add('open');
 
-    // 滚到当前值的位置
+    // 滚到当前值的位置（每项恰好 44px，定位天然落在整行上）
     const dateCol = document.getElementById('dtDates');
     const timeCol = document.getElementById('dtTimes');
-    dateCol.scrollTop = 0;
+    const dayIdx = dateIndexOf(dtDate);
+    dateCol.scrollTop = dayIdx * DT_ITEM_H;
     timeCol.scrollTop = (dtHour * 2 + (dtMin === 30 ? 1 : 0)) * DT_ITEM_H;
   }
 
@@ -1084,6 +1090,14 @@
     const timeCol = document.getElementById('dtTimes');
     dateCol.innerHTML = '';
     timeCol.innerHTML = '';
+
+    const spacer = () => {
+      const sp = document.createElement('div');
+      sp.className = 'dt-spacer';
+      return sp;
+    };
+    dateCol.appendChild(spacer());
+    timeCol.appendChild(spacer());
 
     const today = new Date(); today.setHours(0, 0, 0, 0);
     for (let i = 0; i < DT_DAYS; i++){
@@ -1111,29 +1125,78 @@
       }
     }
 
-    // 滚动时高亮中间那一行，做出拨盘的感觉
-    bindWheelHighlight(dateCol, (idx) => {
+    dateCol.appendChild(spacer());
+    timeCol.appendChild(spacer());
+
+    // 滚动 → 高亮中间那行；松手后吸附到整行，永远不会停在两行之间
+    bindWheel(dateCol, (idx) => {
       dtDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + idx);
     });
-    bindWheelHighlight(timeCol, (idx) => {
+    bindWheel(timeCol, (idx) => {
       dtHour = Math.floor(idx / 2);
       dtMin = idx % 2 === 0 ? 0 : 30;
     });
   }
 
+  // 该日期在拨盘里的第几项（今天=0）
+  function dateIndexOf(d){
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    return Math.max(0, Math.min(DT_DAYS - 1, Math.round((x - today) / 86400000)));
+  }
+
   function sameDay(a, b){
     return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
   }
+  function optionsOf(col){
+    return Array.prototype.filter.call(col.children, (c) => c.classList.contains('dt-opt'));
+  }
   function markOn(col, el){
-    Array.prototype.forEach.call(col.children, (c) => c.classList.remove('on'));
+    optionsOf(col).forEach((c) => c.classList.remove('on'));
     el.classList.add('on');
   }
-  function bindWheelHighlight(col, onIndex){
-    col.onscroll = () => {
-      const idx = Math.max(0, Math.min(col.children.length - 1, Math.round(col.scrollTop / DT_ITEM_H)));
+
+  // 高亮跟随 + 松手吸附：滚完了强制对齐到整行，绝不停在两条中间
+  function bindWheel(col, onIndex){
+    let settle = null;
+    let snapTarget = null;      // 吸附动画的目标位置
+    let lastScroll = 0;         // 上一次 scrollTop，用来判断是否还在动
+
+    const alignTo = (idx) => {
+      const opts = optionsOf(col);
+      idx = Math.max(0, Math.min(opts.length - 1, idx));
+      const max = Math.max(0, col.scrollHeight - col.clientHeight);
+      const target = Math.max(0, Math.min(idx * DT_ITEM_H, max));
+      snapTarget = target;
+      col.scrollTo({ top: target, behavior: 'smooth' });
       onIndex(idx);
-      const el = col.children[idx];
+      const el = opts[idx];
       if (el && !el.classList.contains('on')) markOn(col, el);
+    };
+
+    col.onscroll = () => {
+      const opts = optionsOf(col);
+      if (!opts.length) return;
+      const top = col.scrollTop;
+
+      // 吸附动画自己在滚：位置已经贴在目标上就跳过，避免反复触发。
+      // 注意不能用一个"动画期间全部忽略"的开关——那会把用户在这期间的滚动一起吞掉。
+      if (snapTarget !== null && Math.abs(top - snapTarget) <= 1) return;
+
+      const idx = Math.max(0, Math.min(opts.length - 1, Math.round(top / DT_ITEM_H)));
+      onIndex(idx);
+      const el = opts[idx];
+      if (el && !el.classList.contains('on')) markOn(col, el);
+
+      // 连续两次 scroll 位置没变 = 已经停了，立刻吸附；否则等手指离开 120ms
+      if (Math.abs(top - lastScroll) < 1) {
+        clearTimeout(settle);
+        alignTo(idx);
+        return;
+      }
+      lastScroll = top;
+      clearTimeout(settle);
+      settle = setTimeout(() => alignTo(idx), 120);
     };
   }
 
