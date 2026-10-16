@@ -361,7 +361,7 @@
   .dt-col + .dt-col{border-left:1px solid #262629}
   .dt-spacer{height:99px;flex:0 0 auto}
   .dt-opt{
-    height:44px;line-height:44px;text-align:center;font-size:16px;color:#6f6f76;
+    height:44px;line-height:44px;text-align:center;font-size:14.5px;color:#6f6f76;
     cursor:pointer;font-variant-numeric:tabular-nums;
     scroll-snap-align:center;        /* 每行都是吸附点 */
   }
@@ -1177,16 +1177,16 @@
     const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
     return Math.max(0, Math.min(DT_DAYS - 1, Math.round((x - base) / 86400000)));
   }
-  // 日期标签：近三天用"今天/明天/后天"，跨年的带上年份，免得以为只能选到本月
+  // 日期标签：统一 YYYY-MM-DD；只有今天/明天/后天额外加个前缀
   function dateLabel(d){
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
     const diff = Math.round((x - today) / 86400000);
-    if (diff === 0) return '今天 ' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-    if (diff === 1) return '明天 ' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-    if (diff === 2) return '后天 ' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-    if (d.getFullYear() !== today.getFullYear()) return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-    return pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    const ymd = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    if (diff === 0) return '今天 ' + ymd;
+    if (diff === 1) return '明天 ' + ymd;
+    if (diff === 2) return '后天 ' + ymd;
+    return ymd;
   }
 
   function sameDay(a, b){
