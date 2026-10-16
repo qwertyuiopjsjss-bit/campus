@@ -159,11 +159,22 @@
   .hero-name h2 i{font-style:normal;font-size:11.5px;font-weight:400;color:#6b7280;background:#f0f1f4;border-radius:4px;padding:2px 6px}
   .hero-name p{margin:6px 0 0;font-size:12.5px;color:#8a8a90;line-height:1.4}
   .hero-id{font-size:13px;color:#b6b9c0;letter-spacing:.5px;padding-top:6px}
-  .card{background:#fff;border-radius:12px;margin:10px 12px 0;box-shadow:0 1px 8px rgba(0,0,0,.05);overflow:hidden}
-  .card-h{padding:14px 14px 10px;font-size:15.5px;font-weight:600;color:#1a1a1c}
-  .card .line{display:flex;padding:11px 14px;font-size:14.5px;border-top:1px solid #f0f1f4}
-  .card .line .k{flex:0 0 108px;color:#8a8a90}
-  .card .line .v{flex:1 1 auto;color:#1a1a1c;word-break:break-all}
+  /* 详情页卡片：用 dcard 这个独立类名，避免和工作台的网格 .card 撞车 */
+  .dcard{background:#fff;border-radius:12px;margin:10px 12px 0;box-shadow:0 1px 8px rgba(0,0,0,.05);overflow:hidden}
+  .dcard-h{padding:14px 14px 10px;font-size:15.5px;font-weight:600;color:#1a1a1c}
+  /* 横向滚动兜底：万一行内容超宽，宁可整行左右滑，也不要挤成一字一行 */
+  .dcard-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .dcard .line,.dcard-scroll .line{
+    display:flex;align-items:flex-start;gap:10px;
+    padding:11px 14px;font-size:14.5px;line-height:1.45;border-top:1px solid #f0f1f4;
+    min-width:0;
+  }
+  .dcard .line .k,.dcard-scroll .line .k{flex:0 0 auto;width:7.5em;color:#8a8a90}
+  .dcard .line .v,.dcard-scroll .line .v{
+    flex:1 1 auto;min-width:0;color:#1a1a1c;
+    overflow-wrap:anywhere;            /* 长串也能断行，但不至于一字一行 */
+    word-break:normal;
+  }
   .more{
     padding:12px 14px;text-align:center;color:#1a73e8;font-size:14px;cursor:pointer;
     border-top:1px solid #f0f1f4;display:flex;align-items:center;justify-content:center;gap:5px;
@@ -187,7 +198,7 @@
     background:#f2f3f5;border-top:1px solid #e6e8ec;
   }
   .line.extra{display:none}
-  .card.open .line.extra{display:flex}
+  .dcard.open .line.extra{display:flex}
   .detail-actions button{
     flex:1 1 0;height:44px;border-radius:6px;font-size:15.5px;cursor:pointer;
     background:#fff;border:1px solid #d8dbe1;color:#4b5563;
@@ -570,8 +581,8 @@
       </div>
 
       <!-- 请假信息 -->
-      <div class="card">
-        <div class="card-h">请假信息</div>
+      <div class="dcard dcard-scroll">
+        <div class="dcard-h">请假信息</div>
         <div class="line"><span class="k">请假开始时间</span><span class="v" id="dStart">—</span></div>
         <div class="line"><span class="k">请假结束时间</span><span class="v" id="dEnd">—</span></div>
         <div class="line"><span class="k">请假天数</span><span class="v" id="dDays">—</span></div>
@@ -583,20 +594,20 @@
       </div>
 
       <!-- 销假信息 -->
-      <div class="card">
-        <div class="card-h">销假信息</div>
+      <div class="dcard">
+        <div class="dcard-h">销假信息</div>
         <div class="line"><span class="k">销假状态</span><span class="v" id="dCancel">未销假</span></div>
       </div>
 
       <!-- 续假记录（点过续假申请才出现）-->
-      <div class="card" id="renewCard" style="display:none">
-        <div class="card-h">续假记录</div>
+      <div class="dcard" id="renewCard" style="display:none">
+        <div class="dcard-h">续假记录</div>
         <div id="renewList"></div>
       </div>
 
       <!-- 审核流程 -->
-      <div class="card">
-        <div class="card-h">审核流程</div>
+      <div class="dcard">
+        <div class="dcard-h">审核流程</div>
         <div class="steps">
           <div class="step">
             <div class="rail">
@@ -1263,7 +1274,7 @@
   }
 
   function toggleMore(){
-    const card = document.getElementById('dMore').closest('.card');
+    const card = document.getElementById('dMore').closest('.dcard');
     const open = card.classList.toggle('open');
     document.getElementById('dMoreIcon').textContent = open ? '⌃' : '⌄';
     document.getElementById('dMore').firstChild.textContent = open ? '收起 ' : '展开 ';
