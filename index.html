@@ -156,6 +156,12 @@
   .avatar svg{width:44px;height:44px;fill:#7d93b8}
   .hero-name{flex:1 1 auto;padding-top:4px}
   .hero-name h2{margin:0;font-size:20px;font-weight:700;color:#1a1a1c;display:flex;align-items:center;gap:8px}
+  /* 可点击编辑的文字：给个浅色虚线和铅笔，提示这里能点 */
+  .editable{
+    border-bottom:1px dashed #b9c2d0;cursor:pointer;padding-bottom:1px;
+  }
+  .editable:active{background:#eef2f8}
+  .editable::after{content:" ✎";font-size:.72em;color:#9aa6bb;font-weight:400}
   .hero-name h2 i{font-style:normal;font-size:11.5px;font-weight:400;color:#6b7280;background:#f0f1f4;border-radius:4px;padding:2px 6px}
   .hero-name p{margin:6px 0 0;font-size:12.5px;color:#8a8a90;line-height:1.4}
   .hero-id{font-size:13px;color:#b6b9c0;letter-spacing:.5px;padding-top:6px}
@@ -602,7 +608,7 @@
                 </svg>
               </div>
               <div class="hero-name">
-                <h2>魏靖文 <i>2026级</i></h2>
+                <h2><span id="editName" class="editable" onclick="editName()">魏靖文</span> <i>2026级</i></h2>
                 <p>智能制造学院 · 机械设计制造及其自动化 · 机械2602</p>
               </div>
               <div class="hero-id">202612213</div>
@@ -617,10 +623,10 @@
         <div class="line"><span class="k">请假开始时间</span><span class="v" id="dStart">—</span></div>
         <div class="line"><span class="k">请假结束时间</span><span class="v" id="dEnd">—</span></div>
         <div class="line"><span class="k">请假天数</span><span class="v" id="dDays">—</span></div>
-        <div class="line extra"><span class="k">请假性质 / 类型</span><span class="v" id="dNature">—</span></div>
         <div class="line"><span class="k">是否出校</span><span class="v" id="dOut">—</span></div>
         <div class="line"><span class="k">请假事由</span><span class="v" id="dReason">—</span></div>
         <div class="line"><span class="k">手机号</span><span class="v" id="dPhone">—</span></div>
+        <div class="line extra"><span class="k">请假性质 / 类型</span><span class="v" id="dNature">—</span></div>
         <div class="more" id="dMore" onclick="toggleMore()"><span id="dMoreText">展开</span> <span id="dMoreIcon">⌄</span></div>
       </div>
 
@@ -656,7 +662,7 @@
             </div>
             <div class="txt" style="padding-bottom:6px">
               <b>待辅导员审核</b>
-              <em>审核人：黄雨露</em>
+              <em>审核人：<span id="editReviewer" class="editable" onclick="editReviewer()">黄雨露</span></em>
               <em id="dApproveOpinion">审核意见：同意</em>
               <i id="dApproveAt">—</i>
             </div>
@@ -695,6 +701,11 @@
     <div class="dialog">
       <h4 id="dialogTitle">提示</h4>
       <p id="dialogText"></p>
+      <div id="dialogInputWrap" style="display:none;padding:0 20px 18px">
+        <input id="dialogInput" type="text" maxlength="12"
+          style="width:100%;box-sizing:border-box;border:1px solid #d8dbe1;border-radius:8px;
+                 padding:10px 12px;font:inherit;font-size:15px;color:#1a1a1c;outline:none;text-align:center">
+      </div>
       <div class="btns">
         <button type="button" onclick="closeDialog()">取消</button>
         <button type="button" class="primary" id="dialogOk" onclick="runDialogAction()">确定</button>
@@ -756,6 +767,13 @@
     document.querySelectorAll('[data-toast]').forEach(el => {
       el.addEventListener('click', () => toast(el.dataset.toast));
     });
+    // 输入框里按回车 = 点确定
+    const input = document.getElementById('dialogInput');
+    if (input) {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); runDialogAction(); }
+      });
+    }
     document.querySelectorAll('[data-picker]').forEach(row => {
       row.addEventListener('click', () => {
         // 日期时间的行：一次弹出"日期 + 时间"，两样都能改
@@ -1146,6 +1164,49 @@
 
   const records = loadRecords();
 
+  /* ---------------- 个人信息（姓名、审核人，存在本机）---------------- */
+  const PROFILE_KEY = 'campus.profile.v1';
+  const PROFILE_DEFAULT = { name: '魏靖文', reviewer: '黄雨露' };
+
+  function loadProfile(){
+    try {
+      const raw = localStorage.getItem(PROFILE_KEY);
+      const p = raw ? JSON.parse(raw) : null;
+      return Object.assign({}, PROFILE_DEFAULT, p && typeof p === 'object' ? p : {});
+    } catch (e) {
+      return Object.assign({}, PROFILE_DEFAULT);
+    }
+  }
+  function saveProfile(){
+    try { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); } catch (e) {}
+  }
+
+  const profile = loadProfile();
+
+  /* ---------------- 点名字就能改 ---------------- */
+  function editProfileField(key, title, hint){
+    const cur = profile[key];
+    showInputDialog(title, hint || '', cur, (value) => {
+      const v = value.trim();
+      if (!v) return toast('不能留空');
+      if (v === cur) return;
+      profile[key] = v;
+      saveProfile();
+      renderProfile();
+      toast('已改为「' + v + '」');
+    });
+  }
+  // 注意：这里必须用函数声明，const 箭头函数不会挂到全局，内联 onclick 找不到
+  function editName(){ editProfileField('name', '修改姓名', '最多 12 个字'); }
+  function editReviewer(){ editProfileField('reviewer', '修改审核人', '最多 12 个字'); }
+
+  function renderProfile(){
+    const n = document.getElementById('editName');
+    const r = document.getElementById('editReviewer');
+    if (n) n.textContent = profile.name;
+    if (r) r.textContent = profile.reviewer;
+  }
+
   function renderRecords(){
     const box = document.getElementById('recordList');
     const empty = document.getElementById('emptyState');
@@ -1271,6 +1332,7 @@
   function renderDetail(){
     const r = currentRecord;
     if (!r) return;
+    renderProfile();
     const set = (elId, text) => { document.getElementById(elId).textContent = text; };
     set('dStart', r.startAt);
     set('dEnd', r.endAt);
@@ -1338,6 +1400,9 @@
 
   function showDialog(title, text, okLabel, action){
     document.getElementById('dialogTitle').textContent = title;
+    const iw = document.getElementById('dialogInputWrap');
+    if (iw) iw.style.display = 'none';
+    document.getElementById('dialogText').style.display = '';
     document.getElementById('dialogText').textContent = text;
     document.getElementById('dialogOk').textContent = okLabel;
     dialogAction = action;
@@ -1346,6 +1411,29 @@
   function closeDialog(){
     document.getElementById('dialogMask').classList.remove('open');
     dialogAction = null;
+  }
+
+  // 带输入框的弹窗（用来改姓名/审核人）
+  function showInputDialog(title, hint, value, onOk){
+    document.getElementById('dialogTitle').textContent = title;
+    const textEl = document.getElementById('dialogText');
+    const inputWrap = document.getElementById('dialogInputWrap');
+    const input = document.getElementById('dialogInput');
+
+    textEl.textContent = hint || '';
+    textEl.style.display = hint ? '' : 'none';
+    inputWrap.style.display = '';
+    input.value = value;
+    input.maxLength = 12;
+
+    dialogAction = () => {
+      const v = input.value;
+      inputWrap.style.display = 'none';
+      onOk(v);
+    };
+    document.getElementById('dialogMask').classList.add('open');
+    // 自动聚焦并全选，改起来快
+    setTimeout(() => { try { input.focus(); input.select(); } catch (e) {} }, 60);
   }
   // 点"确定"：先关弹窗，再执行动作（动作里可能又会开新弹窗，比如续假）
   function runDialogAction(){
@@ -1443,6 +1531,7 @@
   }
 
   renderRecords();
+  renderProfile();
   show('screen-workbench');
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
